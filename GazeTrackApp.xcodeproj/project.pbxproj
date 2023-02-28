@@ -13,6 +13,10 @@
 		9644C33A299E9806007E9725 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9644C339299E9806007E9725 /* Preview Assets.xcassets */; };
 		9644C34E299EA056007E9725 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9644C34D299EA056007E9725 /* ViewController.swift */; };
 		9644C353299ED0E0007E9725 /* Detector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9644C352299ED0E0007E9725 /* Detector.swift */; };
+		966B950929AE978100B46864 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950829AE978100B46864 /* CameraView.swift */; };
+		966B950B29AE979200B46864 /* CaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950A29AE979200B46864 /* CaptureSession.swift */; };
+		966B950D29AE97A100B46864 /* FaceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950C29AE97A100B46864 /* FaceDetector.swift */; };
+		966B950F29AE97B200B46864 /* AVCaptureVideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -36,6 +40,10 @@
 		9644C339299E9806007E9725 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		9644C34D299EA056007E9725 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9644C352299ED0E0007E9725 /* Detector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detector.swift; sourceTree = "<group>"; };
+		966B950829AE978100B46864 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		966B950A29AE979200B46864 /* CaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSession.swift; sourceTree = "<group>"; };
+		966B950C29AE97A100B46864 /* FaceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceDetector.swift; sourceTree = "<group>"; };
+		966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVCaptureVideoOrientation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +76,10 @@
 		9644C331299E9801007E9725 /* GazeTrackApp */ = {
 			isa = PBXGroup;
 			children = (
+				966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */,
+				966B950C29AE97A100B46864 /* FaceDetector.swift */,
+				966B950A29AE979200B46864 /* CaptureSession.swift */,
+				966B950829AE978100B46864 /* CameraView.swift */,
 				9644C332299E9801007E9725 /* GazeTrackApp.swift */,
 				9644C334299E9801007E9725 /* ContentView.swift */,
 				9644C336299E9806007E9725 /* Assets.xcassets */,
@@ -157,10 +169,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				966B950F29AE97B200B46864 /* AVCaptureVideoOrientation.swift in Sources */,
 				9644C34E299EA056007E9725 /* ViewController.swift in Sources */,
+				966B950D29AE97A100B46864 /* FaceDetector.swift in Sources */,
 				9644C335299E9801007E9725 /* ContentView.swift in Sources */,
 				9644C333299E9801007E9725 /* GazeTrackApp.swift in Sources */,
+				966B950929AE978100B46864 /* CameraView.swift in Sources */,
 				9644C353299ED0E0007E9725 /* Detector.swift in Sources */,
+				966B950B29AE979200B46864 /* CaptureSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
