@@ -1,27 +1,3 @@
-////
-////  ContentView.swift
-////  GazeTrackApp
-////
-////  Created by Jason Shang on 2/16/23.
-////
-//
-//import SwiftUI
-//import AVFoundation
-//
-//struct ContentView: View {
-//
-//    var body: some View {
-//        HostedViewController()
-//            .ignoresSafeArea()
-//    }
-//}
-//
-//struct ContentView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        ContentView()
-//    }
-//}
-
 //
 //  ContentView.swift
 //  Shared
@@ -51,10 +27,17 @@ struct ContentView: View {
                 positionView()
             }
         }.onChange(of: faceDetector.landmarks) { landmarks in
-            guard let allPoints = landmarks?.allPoints else {
-                return
-            }
-            self.allPoints = allPoints.normalizedPoints
+//            guard let leftEye = landmarks?.leftEye else { return }
+//            guard let rightEye = landmarks?.rightEye else { return }
+//            guard let leftPupil = landmarks?.leftPupil else { return }
+//            guard let rightPupil = landmarks?.rightPupil else { return }
+//            guard let leftEyebrow = landmarks?.leftEyebrow else { return }
+//            guard let rightEyebrow = landmarks?.rightEyebrow else { return }
+//            let allPoints = Array([leftEye.normalizedPoints[0], leftEye.normalizedPoints[3]]) + Array([rightEye.normalizedPoints[0], rightEye.normalizedPoints[3]]) + Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]]) + Array([rightEyebrow.normalizedPoints[3], rightEyebrow.normalizedPoints[5]])
+            
+//            self.leftEyeBoundingBox = leftEyeBoundingBox
+//            self.rightEyeBoundingBox = rightEyeBoundingBox
+            //self.allPoints = allPoints
         }
     }
     
@@ -65,26 +48,35 @@ struct ContentView: View {
                 .overlay(
                     GeometryReader { geometry in
                         
-                        let path = VNImageRectForNormalizedRect(faceDetector.boundingBox, Int(geometry.size.width), Int(geometry.size.height))
+                        let faceBoundingBox = VNImageRectForNormalizedRect(faceDetector.boundingBox, Int(geometry.size.width), Int(geometry.size.height))
+                        let leftEyeBoundingBox = VNImageRectForNormalizedRect(faceDetector.leftEyeBoundingBox, Int(geometry.size.width), Int(geometry.size.height))
+                        let rightEyeBoundingBox = VNImageRectForNormalizedRect(faceDetector.rightEyeBoundingBox, Int(geometry.size.width), Int(geometry.size.height))
                         
                         Rectangle()
-                            .path(in: path)
+                            .path(in: faceBoundingBox)
                             .stroke(Color.red, lineWidth: 2.0)
                         
+                        Rectangle()
+                            .path(in: leftEyeBoundingBox)
+                            .stroke(Color.red, lineWidth: 2.0)
                         
-                        ForEach(allPoints, id: \.self) { point in
-                            let vectoredPoint = vector2(Float(point.x),Float(point.y))
-                            
-                            let vnImagePoint = VNImagePointForFaceLandmarkPoint(
-                                vectoredPoint,
-                                faceDetector.boundingBox,
-                                Int(geometry.size.width),
-                                Int(geometry.size.height))
-                            
-                            let imagePoint = CGPoint(x: vnImagePoint.x, y: vnImagePoint.y)
-                            
-                            Circle().fill(Color.green).frame(width: 3, height: 3).position(imagePoint)
-                        }
+                        Rectangle()
+                            .path(in: rightEyeBoundingBox)
+                            .stroke(Color.red, lineWidth: 2.0)
+                        
+//                        ForEach(allPoints, id: \.self) { point in
+//                            let vectoredPoint = vector2(Float(point.x),Float(point.y))
+//
+//                            let vnImagePoint = VNImagePointForFaceLandmarkPoint(
+//                                vectoredPoint,
+//                                faceDetector.boundingBox,
+//                                Int(geometry.size.width),
+//                                Int(geometry.size.height))
+//
+//                            let imagePoint = CGPoint(x: vnImagePoint.x, y: vnImagePoint.y)
+//
+//                            Circle().fill(Color.green).frame(width: 3, height: 3).position(imagePoint)
+//                        }
                     })
         } else {
             Text("Preparing Capture Session ...")
