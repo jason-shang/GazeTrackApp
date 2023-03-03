@@ -11,12 +11,12 @@
 		9644C335299E9801007E9725 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9644C334299E9801007E9725 /* ContentView.swift */; };
 		9644C337299E9806007E9725 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9644C336299E9806007E9725 /* Assets.xcassets */; };
 		9644C33A299E9806007E9725 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9644C339299E9806007E9725 /* Preview Assets.xcassets */; };
-		9644C34E299EA056007E9725 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9644C34D299EA056007E9725 /* ViewController.swift */; };
-		9644C353299ED0E0007E9725 /* Detector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9644C352299ED0E0007E9725 /* Detector.swift */; };
 		966B950929AE978100B46864 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950829AE978100B46864 /* CameraView.swift */; };
 		966B950B29AE979200B46864 /* CaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950A29AE979200B46864 /* CaptureSession.swift */; };
 		966B950D29AE97A100B46864 /* FaceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950C29AE97A100B46864 /* FaceDetector.swift */; };
 		966B950F29AE97B200B46864 /* AVCaptureVideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */; };
+		966B951129B1891F00B46864 /* FrameProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B951029B1891F00B46864 /* FrameProcessor.swift */; };
+		FDB7A93627C3BE2C58541E85 /* libPods-GazeTrackApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C9F988624F761248C159B35 /* libPods-GazeTrackApp.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -33,17 +33,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		17BFB3F4F00EDA142ECD9833 /* Pods-GazeTrackApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GazeTrackApp.release.xcconfig"; path = "Target Support Files/Pods-GazeTrackApp/Pods-GazeTrackApp.release.xcconfig"; sourceTree = "<group>"; };
+		6C9F988624F761248C159B35 /* libPods-GazeTrackApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GazeTrackApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		91592B84BCF90DD4CF37C3DA /* Pods-GazeTrackApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GazeTrackApp.debug.xcconfig"; path = "Target Support Files/Pods-GazeTrackApp/Pods-GazeTrackApp.debug.xcconfig"; sourceTree = "<group>"; };
 		9644C32F299E9801007E9725 /* GazeTrackApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GazeTrackApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9644C332299E9801007E9725 /* GazeTrackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GazeTrackApp.swift; sourceTree = "<group>"; };
 		9644C334299E9801007E9725 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9644C336299E9806007E9725 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9644C339299E9806007E9725 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		9644C34D299EA056007E9725 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		9644C352299ED0E0007E9725 /* Detector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detector.swift; sourceTree = "<group>"; };
 		966B950829AE978100B46864 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		966B950A29AE979200B46864 /* CaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSession.swift; sourceTree = "<group>"; };
 		966B950C29AE97A100B46864 /* FaceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceDetector.swift; sourceTree = "<group>"; };
 		966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVCaptureVideoOrientation.swift; sourceTree = "<group>"; };
+		966B951029B1891F00B46864 /* FrameProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameProcessor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,17 +53,38 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FDB7A93627C3BE2C58541E85 /* libPods-GazeTrackApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		224CD43B7862CDEB7F0318D4 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				91592B84BCF90DD4CF37C3DA /* Pods-GazeTrackApp.debug.xcconfig */,
+				17BFB3F4F00EDA142ECD9833 /* Pods-GazeTrackApp.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		536CD3C990D08DB82C138D50 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6C9F988624F761248C159B35 /* libPods-GazeTrackApp.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9644C326299E9801007E9725 = {
 			isa = PBXGroup;
 			children = (
 				9644C331299E9801007E9725 /* GazeTrackApp */,
 				9644C330299E9801007E9725 /* Products */,
+				224CD43B7862CDEB7F0318D4 /* Pods */,
+				536CD3C990D08DB82C138D50 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -84,8 +107,7 @@
 				9644C334299E9801007E9725 /* ContentView.swift */,
 				9644C336299E9806007E9725 /* Assets.xcassets */,
 				9644C338299E9806007E9725 /* Preview Content */,
-				9644C34D299EA056007E9725 /* ViewController.swift */,
-				9644C352299ED0E0007E9725 /* Detector.swift */,
+				966B951029B1891F00B46864 /* FrameProcessor.swift */,
 			);
 			path = GazeTrackApp;
 			sourceTree = "<group>";
@@ -105,6 +127,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9644C33D299E9806007E9725 /* Build configuration list for PBXNativeTarget "GazeTrackApp" */;
 			buildPhases = (
+				EDAF11D328C20702007545D4 /* [CP] Check Pods Manifest.lock */,
 				9644C32B299E9801007E9725 /* Sources */,
 				9644C32C299E9801007E9725 /* Frameworks */,
 				9644C32D299E9801007E9725 /* Resources */,
@@ -164,18 +187,42 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		EDAF11D328C20702007545D4 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-GazeTrackApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		9644C32B299E9801007E9725 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				966B950F29AE97B200B46864 /* AVCaptureVideoOrientation.swift in Sources */,
-				9644C34E299EA056007E9725 /* ViewController.swift in Sources */,
 				966B950D29AE97A100B46864 /* FaceDetector.swift in Sources */,
 				9644C335299E9801007E9725 /* ContentView.swift in Sources */,
 				9644C333299E9801007E9725 /* GazeTrackApp.swift in Sources */,
+				966B951129B1891F00B46864 /* FrameProcessor.swift in Sources */,
 				966B950929AE978100B46864 /* CameraView.swift in Sources */,
-				9644C353299ED0E0007E9725 /* Detector.swift in Sources */,
 				966B950B29AE979200B46864 /* CaptureSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -299,6 +346,7 @@
 		};
 		9644C33E299E9806007E9725 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 91592B84BCF90DD4CF37C3DA /* Pods-GazeTrackApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -334,6 +382,7 @@
 		};
 		9644C33F299E9806007E9725 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 17BFB3F4F00EDA142ECD9833 /* Pods-GazeTrackApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
