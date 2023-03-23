@@ -34,21 +34,20 @@
         NSString *message = @"in predictImage";
         NSLog(@"%@", message);
         
-        // takes in dummy data (ignores imageBuffer)
+        // we're taking in dummy data (ignores imageBuffer)
         // TODO: generate similar format data from imageBuffer (see gazetrack_dataset.py data)
         
-        NSString *leye1_path = @"/Users/jason/Documents/School/Duke/2022-2023/BME493/GazeTrackApp/GazeTrackApp/DummyData/leye1.csv";
-        //NSString *leye1_path = @"../DummyData/leye1.csv";
-        NSString *leye2_path = @"/Users/jason/Documents/School/Duke/2022-2023/BME493/GazeTrackApp/GazeTrackApp/DummyData/leye2.csv";
-        NSString *leye3_path = @"/Users/jason/Documents/School/Duke/2022-2023/BME493/GazeTrackApp/GazeTrackApp/DummyData/leye3.csv";
+        NSString *leye1_path = [[NSBundle mainBundle] pathForResource:@"leye1" ofType:@"csv"];
+        NSString *leye2_path = [[NSBundle mainBundle] pathForResource:@"leye2" ofType:@"csv"];
+        NSString *leye3_path = [[NSBundle mainBundle] pathForResource:@"leye3" ofType:@"csv"];
         
         NSArray *leye1_data = [self readCSVFile:leye1_path];
         NSArray *leye2_data = [self readCSVFile:leye2_path];
         NSArray *leye3_data = [self readCSVFile:leye3_path];
         
-        NSString *reye1_path = @"/Users/jason/Documents/School/Duke/2022-2023/BME493/GazeTrackApp/GazeTrackApp/DummyData/reye1.csv";
-        NSString *reye2_path = @"/Users/jason/Documents/School/Duke/2022-2023/BME493/GazeTrackApp/GazeTrackApp/DummyData/reye2.csv";
-        NSString *reye3_path = @"/Users/jason/Documents/School/Duke/2022-2023/BME493/GazeTrackApp/GazeTrackApp/DummyData/reye3.csv";
+        NSString *reye1_path = [[NSBundle mainBundle] pathForResource:@"reye1" ofType:@"csv"];
+        NSString *reye2_path = [[NSBundle mainBundle] pathForResource:@"reye2" ofType:@"csv"];
+        NSString *reye3_path = [[NSBundle mainBundle] pathForResource:@"reye3" ofType:@"csv"];
         
         NSArray *reye1_data = [self readCSVFile:reye1_path];
         NSArray *reye2_data = [self readCSVFile:reye2_path];
@@ -56,7 +55,7 @@
         
         // MARK: the data might not be read in properly. reye1_data has count of 129 ([reye1_data count]), and kps_data has length of 12 ???
         
-        NSString *kps_path = @"/Users/jason/Documents/School/Duke/2022-2023/BME493/GazeTrackApp/GazeTrackApp/DummyData/kps.csv";
+        NSString *kps_path = [[NSBundle mainBundle] pathForResource:@"kps" ofType:@"csv"];
         NSArray *kps_data = [self readCSVFile:kps_path];
         
         at::Tensor leye_tensor = [self convertToTensor:leye1_data :leye2_data :leye3_data];
