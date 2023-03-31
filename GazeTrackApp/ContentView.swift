@@ -12,73 +12,66 @@ struct ContentView: View {
     
     @EnvironmentObject var faceDetector: FaceDetector
     @EnvironmentObject var captureSession: CaptureSession
+    @Binding var recording: Bool
     
     @State var allPoints = [CGPoint]()
     @State var leftEyebrowPts = [CGPoint]()
     @State var rightEyebrowPts = [CGPoint]()
     
     // real video preview
-//    var body: some View {
-//        ZStack {
-//            cameraView()
-//            VStack {
-//                qualityView()
-//                Spacer()
-//            }
-//            VStack {
-//                Spacer()
-//                positionView()
-//            }
-//        }.onChange(of: faceDetector.landmarks) { landmarks in
-////            guard let leftEye = landmarks?.leftEye else { return }
-////            guard let rightEye = landmarks?.rightEye else { return }
-////            guard let leftPupil = landmarks?.leftPupil else { return }
-////            guard let rightPupil = landmarks?.rightPupil else { return }
-//
-//            guard let allPoints = landmarks?.allPoints else { return }
-//            guard let leftEyebrow = landmarks?.leftEyebrow else { return }
-//            guard let rightEyebrow = landmarks?.rightEyebrow else { return }
-//
-////            // get various points of particular interest
-////            let allPoints = Array([leftEye.normalizedPoints[0], leftEye.normalizedPoints[3]]) + Array([rightEye.normalizedPoints[0], rightEye.normalizedPoints[3]]) + Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]]) + Array([rightEyebrow.normalizedPoints[3], rightEyebrow.normalizedPoints[5]])
-//
-//            let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
-//            let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
-//
-//            self.allPoints = allPoints.normalizedPoints
-//            self.leftEyebrowPts = leftEyebrowPts
-//            self.rightEyebrowPts = rightEyebrowPts
-//        }
-//    }
-    
-    // ===================== test model deployment on mobile =====================
     var body: some View {
-        imagePredictorView()
+        VStack {
+            if recording {
+                recordingView()
+            }
+            Button(action: {
+                recording.toggle()
+                if recording {
+                    captureSession.setup()
+                    captureSession.start()
+                } else {
+                    captureSession.stop()
+                }
+            }) {
+                Text(recording ? "Stop" : "Start")
+            }
+        }
+        
     }
     
     @ViewBuilder
-    func imagePredictorView() -> some View {
-        Text(String(describing: predictImage()))
-    }
-    
-    func predictImage() -> [NSNumber] {
-        var inferencer = ImagePredictor()
-        var pixelBuffer = [Float32]()
-        if let image = UIImage(named: "00002__00000") {
-            let resizedImage = image.resized(to: CGSize(width: CGFloat(VideoInputConstants.inputWidth), height: CGFloat(VideoInputConstants.inputHeight)))
-        
-            guard let frameBuffer = resizedImage.normalized() else { return [] }
-            pixelBuffer += frameBuffer
+    func recordingView() -> some View {
+        ZStack {
+            cameraView()
+            VStack {
+                qualityView()
+                Spacer()
+            }
+            VStack {
+                Spacer()
+                positionView()
+            }
+        }.onChange(of: faceDetector.landmarks) { landmarks in
+//            guard let leftEye = landmarks?.leftEye else { return }
+//            guard let rightEye = landmarks?.rightEye else { return }
+//            guard let leftPupil = landmarks?.leftPupil else { return }
+//            guard let rightPupil = landmarks?.rightPupil else { return }
+
+            guard let allPoints = landmarks?.allPoints else { return }
+            guard let leftEyebrow = landmarks?.leftEyebrow else { return }
+            guard let rightEyebrow = landmarks?.rightEyebrow else { return }
+
+//            // get various points of particular interest
+//            let allPoints = Array([leftEye.normalizedPoints[0], leftEye.normalizedPoints[3]]) + Array([rightEye.normalizedPoints[0], rightEye.normalizedPoints[3]]) + Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]]) + Array([rightEyebrow.normalizedPoints[3], rightEyebrow.normalizedPoints[5]])
+
+            let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
+            let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
+
+            self.allPoints = allPoints.normalizedPoints
+            self.leftEyebrowPts = leftEyebrowPts
+            self.rightEyebrowPts = rightEyebrowPts
         }
-        
-        guard let predictions = inferencer.module.predict(image: &pixelBuffer) else {
-            return []
-        }
-        
-        return predictions
     }
-    
-    // =============================================================================
     
     @ViewBuilder
     func cameraView() -> some View {
@@ -93,12 +86,14 @@ struct ContentView: View {
                         
                         // determine height of eye bounding box based on eye/face ratio
                         // TODO: refine this proportion (average of all ratios in GazeCapture dataset?)
-                        let proportion = 4.0
-                        let eyeBoundingBoxHeight = faceBoundingBox.height/proportion
+                        let heightProportion = 4.0
+                        let widthProportion = 4.0
+                        let eyeBoundingBoxHeight = faceBoundingBox.height/heightProportion
+                        let eyeBoundingBoxWidth = faceBoundingBox.width/widthProportion
                         
-                        let leftEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.leftEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight)
+                        let leftEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.leftEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight, boxWidth: eyeBoundingBoxWidth)
                         
-                        let rightEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.rightEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight)
+                        let rightEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.rightEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight, boxWidth: eyeBoundingBoxWidth)
                         
                         // face bounding box
                         Rectangle()
@@ -180,7 +175,7 @@ struct ContentView: View {
             }).padding().background(Color.gray)
     }
     
-    func makeEyeBoundingBox(eyebrowPts: [CGPoint], faceBoundingBox: CGRect, deviceWidth: Int, deviceHeight: Int, boxHeight: CGFloat) -> CGRect {
+    func makeEyeBoundingBox(eyebrowPts: [CGPoint], faceBoundingBox: CGRect, deviceWidth: Int, deviceHeight: Int, boxHeight: CGFloat, boxWidth: CGFloat) -> CGRect {
         if (eyebrowPts.count == 0) {
             return CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
         }
@@ -207,10 +202,36 @@ struct ContentView: View {
             deviceWidth,
             deviceHeight)
     
-        let width = vnImagePointRight.x - vnImagePointLeft.x
+        let width = vnImagePointRight.x - vnImagePointLeft.x // alternate method for calculating width
         
-        return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: width, height: boxHeight)
+        return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: boxWidth, height: boxHeight)
     }
+    
+    // ===================== test model deployment on mobile =====================
+  
+//    @ViewBuilder
+//    func imagePredictorView() -> some View {
+//        Text(String(describing: predictImage()))
+//    }
+//
+//    func predictImage() -> [NSNumber] {
+//        var inferencer = ImagePredictor()
+//        var pixelBuffer = [Float32]()
+//        if let image = UIImage(named: "00002__00000") {
+//            let resizedImage = image.resized(to: CGSize(width: CGFloat(VideoInputConstants.inputWidth), height: CGFloat(VideoInputConstants.inputHeight)))
+//
+//            guard let frameBuffer = resizedImage.normalized() else { return [] }
+//            pixelBuffer += frameBuffer
+//        }
+//
+//        guard let predictions = inferencer.module.predict(image: &pixelBuffer) else {
+//            return []
+//        }
+//
+//        return predictions
+//    }
+  
+  // =============================================================================
 }
 
 extension CGPoint: Hashable {
