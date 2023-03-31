@@ -53,7 +53,7 @@
         NSArray *reye2_data = [self readCSVFile:reye2_path];
         NSArray *reye3_data = [self readCSVFile:reye3_path];
         
-        // MARK: the data might not be read in properly. reye1_data has count of 129 ([reye1_data count]), and kps_data has length of 12 ???
+        // TODO: the data might not be read in properly. reye1_data has count of 129 ([reye1_data count]), and kps_data has length of 12 ???
         
         NSString *kps_path = [[NSBundle mainBundle] pathForResource:@"kps" ofType:@"csv"];
         NSArray *kps_data = [self readCSVFile:kps_path];
@@ -69,9 +69,32 @@
             kps_tensor[0][i] = [obj floatValue];
         }
         
+        // MARK: quantize input tensors
+        // scale & zero point determined through calibration data
+        // note: quantizedValue = round(realValue / scale + zeroPoint)
+        // approach 1: PyTorch's dynamic quantization; scale value = range of values divided by the maximum value that can be represented by the given bit width (e.g. 255 for 8-bit) ((r_max - r_min)/255), and the zero point value is set to 0
+        double leye_scale = [self getScale:leye_tensor];
+        double reye_scale = [self getScale:reye_tensor];
+        double kps_scale = [self getScale:kps_tensor];
+        at::Tensor quantized_leye_tensor = torch::quantize_per_tensor(leye_tensor, leye_scale, 0, at::kQInt8);
+        at::Tensor quantized_reye_tensor = torch::quantize_per_tensor(reye_tensor, reye_scale, 0, at::kQInt8);
+        at::Tensor quantized_kps_tensor = torch::quantize_per_tensor(kps_tensor, kps_scale, 0, at::kQInt8);
+        
+        // approach 2: PyTorch's post-training static quantization, uses "histogram scaling"
+        // https://medium.com/@sanjanasrinivas73/post-training-static-quantization-pytorch-37dd187ba105
+        
+        // the shapes look correct? (1, 3, 128, 128) & (1, 3, 128, 128) & (1, 11)...
+        // MARK: open github issue: https://github.com/pytorch/pytorch/issues/76726
+        NSLog(@"left");
+        [self printShape:quantized_leye_tensor];
+        NSLog(@"right");
+        [self printShape:quantized_reye_tensor];
+        NSLog(@"kps");
+        [self printShape:quantized_kps_tensor];
+        
         torch::autograd::AutoGradMode guard(false);
         at::AutoNonVariableTypeMode non_var_type_mode(true);
-        auto outputTensor = _impl.forward({leye_tensor, reye_tensor, kps_tensor}).toTensor();
+        auto outputTensor = _impl.forward({quantized_leye_tensor, quantized_reye_tensor, quantized_kps_tensor}).toTensor();
         float* floatBuffer = outputTensor.data_ptr<float>();
         if (!floatBuffer) {
           return nil;
@@ -110,6 +133,20 @@
     return data;
 }
 
+- (void)printShape:(at::Tensor)tensor {
+    NSArray<NSNumber *> *shape = @[];
+    int ndim = tensor.dim();
+    for (int i = 0; i < ndim; i++) {
+        NSNumber *dim = [NSNumber numberWithInt:tensor.size(i)];
+        shape = [shape arrayByAddingObject:dim];
+    }
+
+    for (int i = 0; i < [shape count]; i++) {
+        NSLog(@"%@", [shape objectAtIndex:i]);
+    }
+}
+
+
 // "stack" the 3 NSArrays we read in from the CSVs into a 3x128x128 torch tensor
 - (at::Tensor)convertToTensor:(NSArray *)array1 :(NSArray *)array2 :(NSArray *)array3 {
     // Allocate memory for the tensor
@@ -129,6 +166,12 @@
     }
 
     return tensor;
+}
+
+- (double)getScale:(at::Tensor)tensor {
+    at::Tensor max = torch::max(tensor);
+    at::Tensor min = torch::min(tensor);
+    return (max.item<float>() - min.item<float>())/255.0;
 }
 
 //- (NSArray<NSNumber*>*)predictImage:(void*)imageBuffer {
