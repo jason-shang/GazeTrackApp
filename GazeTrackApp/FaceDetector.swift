@@ -130,11 +130,16 @@ class FaceDetector: NSObject, ObservableObject {
     ///   - request: VNRequest
     ///   - error: Error
     func handleRequests(request: VNRequest, error: Error?) {
+        var bounds = UIScreen.main.bounds
+        var deviceWidth = Int(bounds.size.width)
+        var deviceHeight = Int(bounds.size.height)
+        
         DispatchQueue.main.async {
             guard
                 let results = request.results as? [VNFaceObservation],
                 let result = results.first else { return }
             
+//            self.faceBoundingBox = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
             self.faceBoundingBox = result.boundingBox
             
             if let yaw = result.yaw,
@@ -160,6 +165,32 @@ class FaceDetector: NSObject, ObservableObject {
                 self.faceCaptureQuality = captureQuality
             }
         }
+    }
+    
+    func updateSessionData() {
+        //let height =
+        self.faceHeights
+        self.faceWidths = []
+        self.faceXs = []
+        self.faceYs = []
+        self.faceValids = []
+        
+        self.lEyeHeights = []
+        self.lEyeWidths = []
+        self.lEyeXs = []
+        self.lEyeYs = []
+        self.lEyeValids = []
+        
+        self.rEyeHeights = []
+        self.rEyeWidths = []
+        self.rEyeXs = []
+        self.rEyeYs = []
+        self.rEyeValids = []
+        
+        self.frames = []
+        self.totalFrames = 0
+        self.numFaceDetections = 0
+        self.numEyeDetections = 0
     }
     
     /*
