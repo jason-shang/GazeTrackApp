@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  Shared
 //
-//  Created by Tobias Wissmüller on 11.01.22.
+//  Created by Jason Shang on 03.01.23.
 //
 
 import SwiftUI
@@ -202,7 +202,7 @@ struct ContentView: View {
             deviceWidth,
             deviceHeight)
     
-        let width = vnImagePointRight.x - vnImagePointLeft.x // alternate method for calculating width
+        // let width = vnImagePointRight.x - vnImagePointLeft.x // alternate method for calculating width
         
         return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: boxWidth, height: boxHeight)
     }

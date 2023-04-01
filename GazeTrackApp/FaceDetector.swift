@@ -2,7 +2,7 @@
 //  FaceDetector.swift
 //  BiometricPhoto
 //
-//  Created by Tobias Wissmüller on 11.01.22.
+//  Created by Jason Shang on 2/16/23.
 //
 
 import Foundation
@@ -30,8 +30,36 @@ class FaceDetector: NSObject, ObservableObject {
     
     private var sampleBuffer: CMSampleBuffer?
     
+    // PassthroughSubject can both subscribe & broadcast;
+    // here, subject receives new values of sampleBuffer from captureSession (see GazeTrackApp AppDelegate) and broadcasts that to downstream subscribers
     let subject = PassthroughSubject<CMSampleBuffer?, Never>()
     var cancellables = [AnyCancellable]()
+    
+    // MARK: data storage for current recording session
+    var faceHeights: [Float] = []
+    var faceWidths: [Float] = []
+    var faceXs: [Float] = []
+    var faceYs: [Float] = []
+    var faceValids: [Int] = []
+    
+    var lEyeHeights: [Float] = []
+    var lEyeWidths: [Float] = []
+    var lEyeXs: [Float] = []
+    var lEyeYs: [Float] = []
+    var lEyeValids: [Int] = []
+    
+    var rEyeHeights: [Float] = []
+    var rEyeWidths: [Float] = []
+    var rEyeXs: [Float] = []
+    var rEyeYs: [Float] = []
+    var rEyeValids: [Int] = []
+    
+    var frameNames: [String] = []
+    var frames: [CMSampleBuffer] = []
+    var totalFrames: Int = 0
+    var numFaceDetections: Int = 0
+    var numEyeDetections: Int = 0
+    var deviceName: String = "iPhone 13 Pro"
     
     override init() {
         super.init()
@@ -49,6 +77,32 @@ class FaceDetector: NSObject, ObservableObject {
         }.store(in: &cancellables)
     }
     
+    /// Resets all face, eye, frame and device data; call when we are starting a new recording/experiment
+    func startDataCollection() {
+        self.faceHeights = []
+        self.faceWidths = []
+        self.faceXs = []
+        self.faceYs = []
+        self.faceValids = []
+        
+        self.lEyeHeights = []
+        self.lEyeWidths = []
+        self.lEyeXs = []
+        self.lEyeYs = []
+        self.lEyeValids = []
+        
+        self.rEyeHeights = []
+        self.rEyeWidths = []
+        self.rEyeXs = []
+        self.rEyeYs = []
+        self.rEyeValids = []
+        
+        self.frames = []
+        self.totalFrames = 0
+        self.numFaceDetections = 0
+        self.numEyeDetections = 0
+        self.deviceName = "iPhone 13 Pro" // account for other models later (can't just use UIDevice.current.model - doesn't give name)
+    }
     
     func detect(sampleBuffer: CMSampleBuffer) throws {
         let handler = VNSequenceRequestHandler()
@@ -59,7 +113,7 @@ class FaceDetector: NSObject, ObservableObject {
         let faceCaptureQualityRequest = VNDetectFaceCaptureQualityRequest.init(completionHandler: handleRequests)
         
         let faceRectanglesRequest = VNDetectFaceRectanglesRequest.init(completionHandler: handleRequests)
-        faceLandmarksRequest.revision = VNDetectFaceRectanglesRequestRevision3
+        faceRectanglesRequest.revision = VNDetectFaceRectanglesRequestRevision3
         
         DispatchQueue.global().async {
             do {
@@ -71,6 +125,10 @@ class FaceDetector: NSObject, ObservableObject {
         
     }
     
+    /// Retrieves results of the face bounding box & landmarks detection request and assigns it to the FaceDetector member variables
+    /// - Parameters:
+    ///   - request: VNRequest
+    ///   - error: Error
     func handleRequests(request: VNRequest, error: Error?) {
         DispatchQueue.main.async {
             guard
@@ -111,12 +169,13 @@ class FaceDetector: NSObject, ObservableObject {
         let proportion = 3.34
         let normalizedBoundingBox = CGRect(x: eyebrowLeft.x, y: eyebrowLeft.y, width: eyebrowRight.x - eyebrowLeft.x, height: faceBoundingBox.height/proportion)
         
-        // convert bounding box from normalized coordinates to coordinates of the original image (devie coordinates)
+//        // convert bounding box from normalized coordinates to coordinates of the original image (devie coordinates)
 //        let imageCoordsBoundingBox = VNImageRectForNormalizedRect(normalizedBoundingBox, deviceWidth, deviceHeight)
         return normalizedBoundingBox
     }
     
     // crop to eyes using the min and max (just the eyes, makeEyeBoundingBox would make bigger rectangles that are more similar to GazeCapture)
+    // UNUSED!
     func cropParts(partsPoints points: [CGPoint], horizontalSpacing hPadding:CGFloat, verticalSpacing vPadding:CGFloat, originalImage image:CIImage) -> CGRect {
         if let Minx = points.min(by: { a,b -> Bool in
             a.x < b.x
