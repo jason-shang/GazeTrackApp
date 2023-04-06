@@ -14,9 +14,12 @@ struct ContentView: View {
     @EnvironmentObject var captureSession: CaptureSession
     @Binding var recording: Bool
     
-    @State var allPoints = [CGPoint]()
-    @State var leftEyebrowPts = [CGPoint]()
-    @State var rightEyebrowPts = [CGPoint]()
+//    @State var allPoints = [CGPoint]()
+//    @State var leftEyebrowPts = [CGPoint]()
+//    @State var rightEyebrowPts = [CGPoint]()
+    @State var faceBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    @State var leftEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    @State var rightEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     
     // real video preview
     var body: some View {
@@ -57,19 +60,25 @@ struct ContentView: View {
 //            guard let leftPupil = landmarks?.leftPupil else { return }
 //            guard let rightPupil = landmarks?.rightPupil else { return }
 
-            guard let allPoints = landmarks?.allPoints else { return }
-            guard let leftEyebrow = landmarks?.leftEyebrow else { return }
-            guard let rightEyebrow = landmarks?.rightEyebrow else { return }
+//            guard let allPoints = landmarks?.allPoints else { return }
+//            guard let leftEyebrow = landmarks?.leftEyebrow else { return }
+//            guard let rightEyebrow = landmarks?.rightEyebrow else { return }
 
 //            // get various points of particular interest
 //            let allPoints = Array([leftEye.normalizedPoints[0], leftEye.normalizedPoints[3]]) + Array([rightEye.normalizedPoints[0], rightEye.normalizedPoints[3]]) + Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]]) + Array([rightEyebrow.normalizedPoints[3], rightEyebrow.normalizedPoints[5]])
 
-            let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
-            let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
-
-            self.allPoints = allPoints.normalizedPoints
-            self.leftEyebrowPts = leftEyebrowPts
-            self.rightEyebrowPts = rightEyebrowPts
+//            let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
+//            let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
+//
+//            self.allPoints = allPoints.normalizedPoints
+//            self.leftEyebrowPts = leftEyebrowPts
+//            self.rightEyebrowPts = rightEyebrowPts
+            self.faceBoundingBox = faceDetector.faceBoundingBox
+            self.leftEyeBoundingBox = faceDetector.leftEyeBoundingBox
+            self.rightEyeBoundingBox = faceDetector.rightEyeBoundingBox
+            print("face: \(String(describing: self.faceBoundingBox))")
+            print("left: \(String(describing: self.leftEyeBoundingBox))")
+            print("right: \(String(describing: self.rightEyeBoundingBox))")
         }
     }
     
@@ -80,53 +89,53 @@ struct ContentView: View {
                 .overlay(
                     GeometryReader { geometry in
                         
-                        let deviceWidth = Int(geometry.size.width)
-                        let deviceHeight = Int(geometry.size.height)
-                        let faceBoundingBox = VNImageRectForNormalizedRect(faceDetector.faceBoundingBox, deviceWidth, deviceHeight)
-                        
-                        // determine height of eye bounding box based on eye/face ratio
-                        // TODO: refine this proportion (average of all ratios in GazeCapture dataset?)
-                        let heightProportion = 4.0
-                        let widthProportion = 4.0
-                        let eyeBoundingBoxHeight = faceBoundingBox.height/heightProportion
-                        let eyeBoundingBoxWidth = faceBoundingBox.width/widthProportion
-                        
-                        let leftEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.leftEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight, boxWidth: eyeBoundingBoxWidth)
-                        
-                        let rightEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.rightEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight, boxWidth: eyeBoundingBoxWidth)
+//                        let deviceWidth = Int(geometry.size.width)
+//                        let deviceHeight = Int(geometry.size.height)
+//                        let faceBoundingBox = VNImageRectForNormalizedRect(faceDetector.faceBoundingBox, deviceWidth, deviceHeight)
+//
+//                        // determine height of eye bounding box based on eye/face ratio
+//                        // TODO: refine this proportion (average of all ratios in GazeCapture dataset?)
+//                        let heightProportion = 4.0
+//                        let widthProportion = 4.0
+//                        let eyeBoundingBoxHeight = faceBoundingBox.height/heightProportion
+//                        let eyeBoundingBoxWidth = faceBoundingBox.width/widthProportion
+//
+//                        let leftEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.leftEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight, boxWidth: eyeBoundingBoxWidth)
+//
+//                        let rightEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: self.rightEyebrowPts, faceBoundingBox: faceDetector.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight, boxHeight: eyeBoundingBoxHeight, boxWidth: eyeBoundingBoxWidth)
                         
                         // face bounding box
                         Rectangle()
-                            .path(in: faceBoundingBox)
+                            .path(in: self.faceBoundingBox)
                             .stroke(Color.red, lineWidth: 2.0)
-                        
+//
                         // eye bounding boxes
                         Rectangle()
-                            .path(in: leftEyeBoundingBox)
+                            .path(in: self.leftEyeBoundingBox)
                             .stroke(Color.red, lineWidth: 2.0)
                         
                         Rectangle()
-                            .path(in: rightEyeBoundingBox)
+                            .path(in: self.rightEyeBoundingBox)
                             .stroke(Color.red, lineWidth: 2.0)
                         
                         // CGRect origin points
-                        Circle().fill(Color.green).frame(width: 3, height: 3).position(leftEyeBoundingBox.origin)
-                        Circle().fill(Color.green).frame(width: 3, height: 3).position(rightEyeBoundingBox.origin)
+                        Circle().fill(Color.green).frame(width: 3, height: 3).position(faceDetector.leftEyeBoundingBox.origin)
+                        Circle().fill(Color.green).frame(width: 3, height: 3).position(faceDetector.rightEyeBoundingBox.origin)
                         
                         // display all 76 face landmarks points
-                        ForEach(self.allPoints, id: \.self) { point in
-                            let vectoredPoint = vector2(Float(point.x),Float(point.y))
-
-                            let vnImagePoint = VNImagePointForFaceLandmarkPoint(
-                                vectoredPoint,
-                                faceDetector.faceBoundingBox,
-                                Int(geometry.size.width),
-                                Int(geometry.size.height))
-
-                            let imagePoint = CGPoint(x: vnImagePoint.x, y: vnImagePoint.y)
-
-                            Circle().fill(Color.green).frame(width: 3, height: 3).position(imagePoint)
-                        }
+//                        ForEach(self.allPoints, id: \.self) { point in
+//                            let vectoredPoint = vector2(Float(point.x),Float(point.y))
+//
+//                            let vnImagePoint = VNImagePointForFaceLandmarkPoint(
+//                                vectoredPoint,
+//                                faceDetector.faceBoundingBox,
+//                                Int(geometry.size.width),
+//                                Int(geometry.size.height))
+//
+//                            let imagePoint = CGPoint(x: vnImagePoint.x, y: vnImagePoint.y)
+//
+//                            Circle().fill(Color.green).frame(width: 3, height: 3).position(imagePoint)
+//                        }
 
 //                        // display right eye bounding box as individual points
 //                        ForEach(self.rightEyebrowPts, id: \.self) { point in
@@ -184,10 +193,7 @@ struct ContentView: View {
         assert(eyebrowPts.count == 2, "Don't have 2 eyebrow points!")
         
         let eyebrowLeft: CGPoint = eyebrowPts[0]
-        let eyebrowRight: CGPoint = eyebrowPts[1]
-        
         let vectoredEyebrowLeft = vector2(Float(eyebrowLeft.x),Float(eyebrowLeft.y))
-        let vectoredEyebrowRight = vector2(Float(eyebrowRight.x),Float(eyebrowRight.y))
 
         // this will be the origin of the bounding box CGRect
         let vnImagePointLeft = VNImagePointForFaceLandmarkPoint(
@@ -196,11 +202,13 @@ struct ContentView: View {
             deviceWidth,
             deviceHeight)
         
-        let vnImagePointRight = VNImagePointForFaceLandmarkPoint(
-            vectoredEyebrowRight,
-            faceBoundingBox,
-            deviceWidth,
-            deviceHeight)
+//        let eyebrowRight: CGPoint = eyebrowPts[1]
+//        let vectoredEyebrowRight = vector2(Float(eyebrowRight.x),Float(eyebrowRight.y))
+//        let vnImagePointRight = VNImagePointForFaceLandmarkPoint(
+//            vectoredEyebrowRight,
+//            faceBoundingBox,
+//            deviceWidth,
+//            deviceHeight)
     
         // let width = vnImagePointRight.x - vnImagePointLeft.x // alternate method for calculating width
         
