@@ -10,15 +10,21 @@ import Vision
 import UIKit
 import Combine
 import AVFoundation
+import SwiftUI
 
 class FaceDetector: NSObject, ObservableObject {
     
     @Published var faceCaptureQuality: Float = 0.0
     
-    // relative to top left corner of full frame (need to convert from normalized to device coordinates
-    @Published var faceBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    @Published var allPoints = [CGPoint]()
+    @Published var rightEyebrowPts = [CGPoint]()
+    @Published var originPts = [CGPoint]()
     
-    // relative to top-left corner of face bounding box (normalized coordinates! no need to convert to device coordinates)
+    // relative to top left corner of full frame; will be in image/device coordinates
+    @Published var faceBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    @Published var normalizedFace = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    
+    // relative to top-left corner of face bounding box (image/device coordinates)
     @Published var leftEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     @Published var rightEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     
@@ -146,7 +152,11 @@ class FaceDetector: NSObject, ObservableObject {
         let deviceWidth = Int(bounds.size.width)
         let deviceHeight = Int(bounds.size.height)
 
+        // get face bounding box in image coordinates
         self.faceBoundingBox = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
+        
+        // MARK: for debugging purposes
+        self.normalizedFace = result.boundingBox
         
         if let yaw = result.yaw,
            let pitch = result.pitch,
@@ -163,8 +173,11 @@ class FaceDetector: NSObject, ObservableObject {
         guard let leftEyebrow = self.landmarks?.leftEyebrow else { return }
         guard let rightEyebrow = self.landmarks?.rightEyebrow else { return }
         
+        guard let allPoints = self.landmarks?.allPoints else { return }
+        self.allPoints = allPoints.normalizedPoints
         let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
         let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
+        self.rightEyebrowPts = rightEyebrowPts
         
         // determine height of eye bounding box based on eye/face ratio
         // TODO: refine this proportion (average of all ratios in GazeCapture dataset?)
@@ -180,6 +193,23 @@ class FaceDetector: NSObject, ObservableObject {
         if let captureQuality = result.faceCaptureQuality {
             self.faceCaptureQuality = captureQuality
         }
+        
+        // for debugging purposes: can delete after
+        var originPts = [CGPoint]()
+        for point in self.rightEyebrowPts {
+            let vectoredPoint = vector2(Float(point.x), Float(point.y))
+            let vnImagePoint = VNImagePointForFaceLandmarkPoint(
+                vectoredPoint,
+                result.boundingBox,
+                deviceWidth,
+                deviceHeight)
+
+            let imagePoint = CGPoint(x: vnImagePoint.x, y: vnImagePoint.y)
+            let p1 = CGPoint(x: vnImagePoint.x, y: vnImagePoint.y+faceBoundingBox.height/4)
+            originPts.append(imagePoint)
+            originPts.append(p1)
+        }
+        self.originPts = originPts
     }
     
     /// Make eye bounding box based on the eye landmark and heuristics (proportion relative to the face)
@@ -209,21 +239,26 @@ class FaceDetector: NSObject, ObservableObject {
             deviceWidth,
             deviceHeight)
         
-//        let eyebrowRight: CGPoint = eyebrowPts[1]
-//        let vectoredEyebrowRight = vector2(Float(eyebrowRight.x),Float(eyebrowRight.y))
-//
-//        let vnImagePointRight = VNImagePointForFaceLandmarkPoint(
-//            vectoredEyebrowRight,
-//            faceBoundingBox,
-//            deviceWidth,
-//            deviceHeight)
+        let eyebrowRight: CGPoint = eyebrowPts[1]
+        let vectoredEyebrowRight = vector2(Float(eyebrowRight.x),Float(eyebrowRight.y))
+
+        let vnImagePointRight = VNImagePointForFaceLandmarkPoint(
+            vectoredEyebrowRight,
+            faceBoundingBox,
+            deviceWidth,
+            deviceHeight)
     
-        // let width = vnImagePointRight.x - vnImagePointLeft.x // alternate method for calculating width
+         let width = vnImagePointRight.x - vnImagePointLeft.x // alternate method for calculating width
         
-        return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: boxWidth, height: boxHeight)
+        let box = CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: width, height: boxHeight)
+        print("image point: \(String(describing: vnImagePointLeft))")
+        print("origin point: \(String(describing: box.origin))")
+        
+        return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: width, height: boxHeight)
     }
     
     func updateSessionData() {
+        // TODO: change this!
         self.faceHeights = []
         self.faceWidths = []
         self.faceXs = []
