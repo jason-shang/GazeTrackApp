@@ -18,7 +18,6 @@ class FaceDetector: NSObject, ObservableObject {
     
     // relative to top left corner of full frame; will be in image/device coordinates
     @Published var faceBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
-    @Published var normalizedFace = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     
     // relative to top-left corner of face bounding box (image/device coordinates)
     @Published var leftEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
@@ -150,9 +149,6 @@ class FaceDetector: NSObject, ObservableObject {
 
         // get face bounding box in image coordinates
         self.faceBoundingBox = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
-        
-        // MARK: for debugging purposes
-        self.normalizedFace = result.boundingBox
         
         if let yaw = result.yaw,
            let pitch = result.pitch,

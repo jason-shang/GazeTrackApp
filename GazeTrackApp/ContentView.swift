@@ -41,6 +41,8 @@ struct ContentView: View {
     
     @ViewBuilder
     func recordingView() -> some View {
+        // note: I forced the ZStack to take up the entire screen to make sure that the eye bounding boxes, which are converted to image coordinates using the UIScreen device dimensions (represents the size of the entire screen) in FaceDetector.swift, are properly drawn onto the current view canvas (if not taking up entire screen, the bounding boxes will be shifted down a bit)
+        // MARK: check if the bounding boxes should be defined with regards to the entire UIScreen or the current view (in other words, are the image frames' sizes the same as the device screen size?) when we have access to data
         ZStack {
             cameraView()
 //            VStack {
