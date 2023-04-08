@@ -1,6 +1,6 @@
 //
 //  FaceDetector.swift
-//  BiometricPhoto
+//  GazeTrackApp
 //
 //  Created by Jason Shang on 2/16/23.
 //
@@ -10,7 +10,6 @@ import Vision
 import UIKit
 import Combine
 import AVFoundation
-import SwiftUI
 
 class FaceDetector: NSObject, ObservableObject {
     
@@ -37,22 +36,22 @@ class FaceDetector: NSObject, ObservableObject {
     var cancellables = [AnyCancellable]()
     
     // MARK: data storage for current recording session
-    var faceHeights: [Float] = []
-    var faceWidths: [Float] = []
-    var faceXs: [Float] = []
-    var faceYs: [Float] = []
+    var faceHeights: [CGFloat] = []
+    var faceWidths: [CGFloat] = []
+    var faceXs: [CGFloat] = []
+    var faceYs: [CGFloat] = []
     var faceValids: [Int] = []
     
-    var lEyeHeights: [Float] = []
-    var lEyeWidths: [Float] = []
-    var lEyeXs: [Float] = []
-    var lEyeYs: [Float] = []
+    var lEyeHeights: [CGFloat] = []
+    var lEyeWidths: [CGFloat] = []
+    var lEyeXs: [CGFloat] = []
+    var lEyeYs: [CGFloat] = []
     var lEyeValids: [Int] = []
     
-    var rEyeHeights: [Float] = []
-    var rEyeWidths: [Float] = []
-    var rEyeXs: [Float] = []
-    var rEyeYs: [Float] = []
+    var rEyeHeights: [CGFloat] = []
+    var rEyeWidths: [CGFloat] = []
+    var rEyeXs: [CGFloat] = []
+    var rEyeYs: [CGFloat] = []
     var rEyeValids: [Int] = []
     
     var frameNames: [String] = []
@@ -78,33 +77,6 @@ class FaceDetector: NSObject, ObservableObject {
         }.store(in: &cancellables)
     }
     
-    /// Resets all face, eye, frame and device data; call when we are starting a new recording/experiment
-    func startDataCollection() {
-        self.faceHeights = []
-        self.faceWidths = []
-        self.faceXs = []
-        self.faceYs = []
-        self.faceValids = []
-        
-        self.lEyeHeights = []
-        self.lEyeWidths = []
-        self.lEyeXs = []
-        self.lEyeYs = []
-        self.lEyeValids = []
-        
-        self.rEyeHeights = []
-        self.rEyeWidths = []
-        self.rEyeXs = []
-        self.rEyeYs = []
-        self.rEyeValids = []
-        
-        self.frames = []
-        self.totalFrames = 0
-        self.numFaceDetections = 0
-        self.numEyeDetections = 0
-        self.deviceName = "iPhone 13 Pro" // account for other models later (can't just use UIDevice.current.model - doesn't give name)
-    }
-    
     func detect(sampleBuffer: CMSampleBuffer) throws {
         let handler = VNSequenceRequestHandler()
         
@@ -126,21 +98,36 @@ class FaceDetector: NSObject, ObservableObject {
         
     }
     
-    /// Retrieves results of the face bounding box & landmarks detection request and assigns it to the FaceDetector member variables
+    /// Retrieves results of the face bounding box & landmarks detection request and assigns them to FaceDetector member variables
     /// - Parameters:
     ///   - request: VNRequest
     ///   - error: Error
     func handleRequests(request: VNRequest, error: Error?) {
-        
         DispatchQueue.main.async {
             guard
-                let results = request.results as? [VNFaceObservation],
-                let result = results.first else { return }
+            let results = request.results as? [VNFaceObservation],
+            let result = results.first else { // encountered invalid face detection
+//                DispatchQueue.global(qos: .userInitiated).async {
+                    self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: false, leftEyeValid: false, rightEyeValid: false)
+//                }
+                return
+            }
             
             self.processFaceObservationResult(result: result)
+            
+            // TODO: when should eye detections be invalid?
+//            DispatchQueue.global(qos: .userInitiated).async {
+                self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: true, leftEyeValid: true, rightEyeValid: true)
+//            }
         }
     }
     
+    /// From VNFaceObservation result, extracts
+    /// 1. face bounding box in image coordinates
+    /// 2. yaw, pitch, roll
+    /// 3. left and right eye bounding boxes in image coordinates
+    /// 4. capture quality
+    /// - Parameter result: VNFaceObservation result
     func processFaceObservationResult(result: VNFaceObservation) {
         // get device bounds
         let bounds = UIScreen.main.bounds
@@ -223,8 +210,8 @@ class FaceDetector: NSObject, ObservableObject {
         return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: eyeBoundingBoxWidth, height: eyeBoundingBoxHeight)
     }
     
-    func updateSessionData() {
-        // TODO: change this!
+    /// Resets all face, eye, frame and device data; call when we are starting a new recording/experiment
+    func startDataCollection() {
         self.faceHeights = []
         self.faceWidths = []
         self.faceXs = []
@@ -247,5 +234,76 @@ class FaceDetector: NSObject, ObservableObject {
         self.totalFrames = 0
         self.numFaceDetections = 0
         self.numEyeDetections = 0
+        self.deviceName = "iPhone 13 Pro" // account for other models later (can't just use UIDevice.current.model - doesn't give name)
+    }
+    
+    /// Append face and eye bounding box data from the current sampleBuffer (frame) to the current session's data storage
+    /// - Parameters:
+    ///   - faceBoundingBox: image coordinates face bounding box
+    ///   - leftEyeBoundingBox: image coordinates left eye bounding box
+    ///   - rightEyeBoundingBox: image coordinates right eye bounding box
+    ///   - faceCaptureQuality: faceCaptureQuality - [0.0, 1.0], float
+    ///   - frame:
+    ///   - faceValid:
+    ///   - leftEyeValid:
+    ///   - rightEyeValid:
+    func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, faceCaptureQuality: Float, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
+        self.faceHeights.append(faceBoundingBox.height)
+        self.faceWidths.append(faceBoundingBox.width)
+        self.faceXs.append(faceBoundingBox.origin.x)
+        self.faceYs.append(faceBoundingBox.origin.y)
+
+        self.lEyeHeights.append(leftEyeBoundingBox.height)
+        self.lEyeWidths.append(leftEyeBoundingBox.width)
+        self.lEyeXs.append(leftEyeBoundingBox.origin.x)
+        self.lEyeYs.append(leftEyeBoundingBox.origin.y)
+
+        self.rEyeHeights.append(rightEyeBoundingBox.height)
+        self.rEyeWidths.append(rightEyeBoundingBox.width)
+        self.rEyeXs.append(rightEyeBoundingBox.origin.x)
+        self.rEyeYs.append(rightEyeBoundingBox.origin.y)
+
+//        self.frames.append(frame)
+//        self.totalFrames += 1
+//
+//        if faceValid {
+//            self.faceValids.append(1)
+//            self.numFaceDetections += 1
+//        } else {
+//            self.faceValids.append(0)
+//        }
+//
+//        self.lEyeValids.append(leftEyeValid ? 1 : 0)
+//        self.rEyeValids.append(rightEyeValid ? 1 : 0)
+//        if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
+    }
+    
+    // for debugging purposes
+    func checkData() {
+        print("faceHeights: \(self.faceHeights.count)")
+        print("faceWidths: \(self.faceWidths.count)")
+        print("faceXs: \(self.faceXs.count)")
+        print("faceYs: \(self.faceYs.count)")
+        print("faceValids: \(self.faceValids.count)")
+        
+        print("==================")
+        print(self.lEyeHeights.count)
+        print(self.lEyeWidths.count)
+        print(self.lEyeXs.count)
+        print(self.lEyeYs.count)
+        print(self.lEyeValids.count)
+        
+        print("==================")
+        print(self.rEyeHeights.count)
+        print(self.rEyeWidths.count)
+        print(self.rEyeXs.count)
+        print(self.rEyeYs.count)
+        print(self.rEyeValids.count)
+        
+        print("==================")
+        print("frames: \(self.frames.count)")
+        print("totalFrames: \(self.totalFrames)")
+        print("numFaceDetections: \(self.numFaceDetections)")
+        print("numEyeDetections: \(self.numEyeDetections)")
     }
 }

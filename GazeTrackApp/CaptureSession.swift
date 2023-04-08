@@ -1,6 +1,6 @@
 //
 //  CaptureSession.swift
-//  BiometricPhoto
+//  GazeTrackApp
 //
 //  Created by Tobias Wissmüller on 12.01.22.
 //

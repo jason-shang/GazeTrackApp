@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Shared
+//  GazeTrackApp
 //
 //  Created by Jason Shang on 03.01.23.
 //
@@ -29,8 +29,11 @@ struct ContentView: View {
                 if recording {
                     captureSession.setup()
                     captureSession.start()
+                    faceDetector.startDataCollection()
                 } else {
                     captureSession.stop()
+//                    faceDetector.checkData()
+                    // export data
                 }
             }) {
                 Text(recording ? "Stop" : "Start")
