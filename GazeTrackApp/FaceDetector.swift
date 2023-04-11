@@ -55,11 +55,15 @@ class FaceDetector: NSObject, ObservableObject {
     var rEyeValids: [Int] = []
     
     var frameNames: [String] = []
-    var frames: [CMSampleBuffer] = []
+    var framesCache: [UIImage] = []
+    let maxFramesCacheSize: Int = 30
     var totalFrames: Int = 0
     var numFaceDetections: Int = 0
     var numEyeDetections: Int = 0
     var deviceName: String = "iPhone 13 Pro"
+    
+    // for debugging
+    var numCalls: Int = 0
     
     override init() {
         super.init()
@@ -69,6 +73,8 @@ class FaceDetector: NSObject, ObservableObject {
                 guard let sampleBuffer = sampleBuffer else {
                     return
                 }
+                self.totalFrames += 1
+                print("getting sample buffer \(self.totalFrames)")
                 try self.detect(sampleBuffer: sampleBuffer)
             } catch {
                 print("Error has been thrown")
@@ -95,7 +101,6 @@ class FaceDetector: NSObject, ObservableObject {
                 // don't do anything
             }
         }
-        
     }
     
     /// Retrieves results of the face bounding box & landmarks detection request and assigns them to FaceDetector member variables
@@ -107,18 +112,13 @@ class FaceDetector: NSObject, ObservableObject {
             guard
             let results = request.results as? [VNFaceObservation],
             let result = results.first else { // encountered invalid face detection
-//                DispatchQueue.global(qos: .userInitiated).async {
-                    self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: false, leftEyeValid: false, rightEyeValid: false)
-//                }
+                self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: false, leftEyeValid: false, rightEyeValid: false)
                 return
             }
-            
             self.processFaceObservationResult(result: result)
             
             // TODO: when should eye detections be invalid?
-//            DispatchQueue.global(qos: .userInitiated).async {
-                self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: true, leftEyeValid: true, rightEyeValid: true)
-//            }
+            self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: true, leftEyeValid: true, rightEyeValid: true)
         }
     }
     
@@ -230,7 +230,7 @@ class FaceDetector: NSObject, ObservableObject {
         self.rEyeYs = []
         self.rEyeValids = []
         
-        self.frames = []
+        self.framesCache = []
         self.totalFrames = 0
         self.numFaceDetections = 0
         self.numEyeDetections = 0
@@ -248,34 +248,103 @@ class FaceDetector: NSObject, ObservableObject {
     ///   - leftEyeValid:
     ///   - rightEyeValid:
     func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, faceCaptureQuality: Float, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
-        self.faceHeights.append(faceBoundingBox.height)
-        self.faceWidths.append(faceBoundingBox.width)
-        self.faceXs.append(faceBoundingBox.origin.x)
-        self.faceYs.append(faceBoundingBox.origin.y)
+        // running on background thread leads to inaccurate updates of information
+        DispatchQueue.global(qos: .background).async {
+            self.numCalls += 1
+            print("what about in here: \(self.numCalls)")
+            self.faceHeights.append(faceBoundingBox.height)
+            self.faceWidths.append(faceBoundingBox.width)
+            self.faceXs.append(faceBoundingBox.origin.x)
+            self.faceYs.append(faceBoundingBox.origin.y)
 
-        self.lEyeHeights.append(leftEyeBoundingBox.height)
-        self.lEyeWidths.append(leftEyeBoundingBox.width)
-        self.lEyeXs.append(leftEyeBoundingBox.origin.x)
-        self.lEyeYs.append(leftEyeBoundingBox.origin.y)
+            self.lEyeHeights.append(leftEyeBoundingBox.height)
+            self.lEyeWidths.append(leftEyeBoundingBox.width)
+            self.lEyeXs.append(leftEyeBoundingBox.origin.x)
+            self.lEyeYs.append(leftEyeBoundingBox.origin.y)
 
-        self.rEyeHeights.append(rightEyeBoundingBox.height)
-        self.rEyeWidths.append(rightEyeBoundingBox.width)
-        self.rEyeXs.append(rightEyeBoundingBox.origin.x)
-        self.rEyeYs.append(rightEyeBoundingBox.origin.y)
+            self.rEyeHeights.append(rightEyeBoundingBox.height)
+            self.rEyeWidths.append(rightEyeBoundingBox.width)
+            self.rEyeXs.append(rightEyeBoundingBox.origin.x)
+            self.rEyeYs.append(rightEyeBoundingBox.origin.y)
+            
+            //self.totalFrames += 1
 
-//        self.frames.append(frame)
-//        self.totalFrames += 1
-//
-//        if faceValid {
-//            self.faceValids.append(1)
-//            self.numFaceDetections += 1
-//        } else {
-//            self.faceValids.append(0)
-//        }
-//
-//        self.lEyeValids.append(leftEyeValid ? 1 : 0)
-//        self.rEyeValids.append(rightEyeValid ? 1 : 0)
-//        if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
+            if faceValid {
+                self.faceValids.append(1)
+                self.numFaceDetections += 1
+            } else {
+                self.faceValids.append(0)
+            }
+
+            self.lEyeValids.append(leftEyeValid ? 1 : 0)
+            self.rEyeValids.append(rightEyeValid ? 1 : 0)
+            if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
+            
+            guard let frame = self.uiImageFromSampleBuffer(sampleBuffer: self.sampleBuffer!) else { return }
+            self.framesCache.append(frame)
+            
+            if self.framesCache.count >= self.maxFramesCacheSize {
+                if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                    // use documentsDirectory for saving files
+                    for (index, frame) in self.framesCache.enumerated() {
+                        if let imageData = frame.jpegData(compressionQuality: 1.0) {
+                            let fileName = "session\(1)_\(index).jpg"
+                            let fileURL = documentsDirectory.appendingPathComponent(fileName)
+                            do {
+                                try imageData.write(to: fileURL)
+                            } catch {
+                                print("Error writing image to disk: \(error.localizedDescription)")
+                            }
+                        }
+                    }
+//                    if let imageData = image.jpegData(compressionQuality: 1.0) {
+//                        let fileName = "session\(session)_\(idx).jpg"
+//                        let fileURL = documentsDirectory.appendingPathComponent(fileName)
+//                        print("fileURL: \(fileURL)")
+//                        do {
+//                            try imageData.write(to: fileURL)
+//                        } catch {
+//                            print("Error writing image to disk: \(error.localizedDescription)")
+//                        }
+//                    }
+                }
+                
+//                for (index, frame) in self.framesCache.enumerated() {
+//                    self.uiImageToDisk(image: frame, session: 1, idx: index) // replace 1 with session number
+//                }
+                self.framesCache.removeAll()
+            }
+            
+            //self.uiImageToDisk(image: frame, session: 1, idx: self.frameNum)
+        }
+    }
+    
+    func uiImageFromSampleBuffer(sampleBuffer: CMSampleBuffer) -> UIImage? {
+        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return nil
+        }
+        let ciimage = CIImage(cvPixelBuffer: imageBuffer)
+        
+        let context = CIContext(options: nil)
+        let cgImage = context.createCGImage(ciimage, from: ciimage.extent)!
+        let image = UIImage(cgImage: cgImage)
+        return image
+    }
+    
+    func uiImageToDisk(image: UIImage, session: Int, idx: Int) {
+        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            // use documentsDirectory for saving files
+            if let imageData = image.jpegData(compressionQuality: 1.0) {
+                let fileName = "session\(session)_\(idx).jpg"
+                let fileURL = documentsDirectory.appendingPathComponent(fileName)
+                print("fileURL: \(fileURL)")
+                do {
+                    try imageData.write(to: fileURL)
+                } catch {
+                    print("Error writing image to disk: \(error.localizedDescription)")
+                }
+            }
+        }
     }
     
     // for debugging purposes
@@ -301,7 +370,7 @@ class FaceDetector: NSObject, ObservableObject {
         print(self.rEyeValids.count)
         
         print("==================")
-        print("frames: \(self.frames.count)")
+        print("frames: \(self.framesCache.count)")
         print("totalFrames: \(self.totalFrames)")
         print("numFaceDetections: \(self.numFaceDetections)")
         print("numEyeDetections: \(self.numEyeDetections)")

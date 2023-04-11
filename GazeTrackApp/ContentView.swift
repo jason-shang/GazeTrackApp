@@ -32,7 +32,7 @@ struct ContentView: View {
                     faceDetector.startDataCollection()
                 } else {
                     captureSession.stop()
-//                    faceDetector.checkData()
+                    faceDetector.checkData()
                     // export data
                 }
             }) {
