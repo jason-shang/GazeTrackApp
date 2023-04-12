@@ -61,7 +61,6 @@ class FaceDetector: NSObject, ObservableObject {
     var frameNames: [String] = []
     var framesCache: [UIImage] = []
     let maxFramesCacheSize: Int = 30
-    var totalFrames: Int = 0
     var numFaceDetections: Int = 0
     var numEyeDetections: Int = 0
     var deviceName: String = "iPhone 13 Pro"
@@ -76,8 +75,7 @@ class FaceDetector: NSObject, ObservableObject {
                 guard let sampleBuffer = sampleBuffer else {
                     return
                 }
-                self.totalFrames += 1 // let's update this in one place later
-                print("getting sample buffer \(self.totalFrames)")
+                
                 try self.detect(sampleBuffer: sampleBuffer)
                 
                 self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
@@ -239,7 +237,6 @@ class FaceDetector: NSObject, ObservableObject {
         self.rEyeValids = []
         
         self.framesCache = []
-        self.totalFrames = 0
         self.numFaceDetections = 0
         self.numEyeDetections = 0
         
@@ -353,7 +350,7 @@ class FaceDetector: NSObject, ObservableObject {
         
         print("==================")
         print("frames: \(self.framesCache.count)")
-        print("totalFrames: \(self.totalFrames)")
+        print("total number of frames: \(self.frameNum)")
         print("numFaceDetections: \(self.numFaceDetections)")
         print("numEyeDetections: \(self.numEyeDetections)")
     }

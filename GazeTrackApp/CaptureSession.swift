@@ -50,6 +50,7 @@ class CaptureSession: NSObject, ObservableObject {
     }
     
     func start() {
+        // TODO: start data collection here!
         guard let captureSession = self.captureSession else {
             return
         }

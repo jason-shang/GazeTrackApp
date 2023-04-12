@@ -8,7 +8,9 @@
 import Foundation
 import CoreMedia
 
-class DataExporter {
+class SessionData {
+    
+    
     /// saves data to app's documents directory (local storage, no Cloud backup)
     /// - Parameter data: JSONEncodableDataModel passed in from FaceDetector
     func saveAsJSON<T: JSONEncodableDataModel>(data: T, fileName: String) {
