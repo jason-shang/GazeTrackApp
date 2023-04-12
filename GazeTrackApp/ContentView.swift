@@ -32,8 +32,11 @@ struct ContentView: View {
                     faceDetector.startDataCollection()
                 } else {
                     captureSession.stop()
+                    if faceDetector.framesCache.count > 0 {
+                        faceDetector.saveFramesToDisk()
+                    }
                     faceDetector.checkData()
-                    // export data
+                    // export data (could refactor the faceDetector.framesCache.count into here)
                 }
             }) {
                 Text(recording ? "Stop" : "Start")

@@ -28,6 +28,10 @@ class FaceDetector: NSObject, ObservableObject {
     @Published var roll: Float = 0
     @Published var pitch: Float = 0
     
+    private var faceValid: Bool = true
+    private var leftEyeValid: Bool = true
+    private var rightEyeValid: Bool = true
+    
     private var sampleBuffer: CMSampleBuffer?
     
     // PassthroughSubject can both subscribe & broadcast;
@@ -62,8 +66,7 @@ class FaceDetector: NSObject, ObservableObject {
     var numEyeDetections: Int = 0
     var deviceName: String = "iPhone 13 Pro"
     
-    // for debugging
-    var numCalls: Int = 0
+    var frameNum: Int = 0
     
     override init() {
         super.init()
@@ -73,9 +76,11 @@ class FaceDetector: NSObject, ObservableObject {
                 guard let sampleBuffer = sampleBuffer else {
                     return
                 }
-                self.totalFrames += 1
+                self.totalFrames += 1 // let's update this in one place later
                 print("getting sample buffer \(self.totalFrames)")
                 try self.detect(sampleBuffer: sampleBuffer)
+                
+                self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
             } catch {
                 print("Error has been thrown")
             }
@@ -96,6 +101,7 @@ class FaceDetector: NSObject, ObservableObject {
         
         DispatchQueue.global().async {
             do {
+                // note: the completion handlers assigned to each of these requests will have access to the results of all these requests,
                 try handler.perform([faceLandmarksRequest, faceCaptureQualityRequest, faceRectanglesRequest], on: sampleBuffer, orientation: .left)
             } catch {
                 // don't do anything
@@ -112,13 +118,15 @@ class FaceDetector: NSObject, ObservableObject {
             guard
             let results = request.results as? [VNFaceObservation],
             let result = results.first else { // encountered invalid face detection
-                self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: false, leftEyeValid: false, rightEyeValid: false)
+                self.faceValid = false
+                
+                // TODO: when should eye detections be invalid?
+                self.leftEyeValid = false
+                self.rightEyeValid = false
                 return
             }
-            self.processFaceObservationResult(result: result)
             
-            // TODO: when should eye detections be invalid?
-            self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: true, leftEyeValid: true, rightEyeValid: true)
+            self.processFaceObservationResult(result: result)
         }
     }
     
@@ -234,6 +242,9 @@ class FaceDetector: NSObject, ObservableObject {
         self.totalFrames = 0
         self.numFaceDetections = 0
         self.numEyeDetections = 0
+        
+        // for debugging
+        self.frameNum = 0
         self.deviceName = "iPhone 13 Pro" // account for other models later (can't just use UIDevice.current.model - doesn't give name)
     }
     
@@ -248,74 +259,38 @@ class FaceDetector: NSObject, ObservableObject {
     ///   - leftEyeValid:
     ///   - rightEyeValid:
     func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, faceCaptureQuality: Float, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
-        // running on background thread leads to inaccurate updates of information
-        DispatchQueue.global(qos: .background).async {
-            self.numCalls += 1
-            print("what about in here: \(self.numCalls)")
-            self.faceHeights.append(faceBoundingBox.height)
-            self.faceWidths.append(faceBoundingBox.width)
-            self.faceXs.append(faceBoundingBox.origin.x)
-            self.faceYs.append(faceBoundingBox.origin.y)
-
-            self.lEyeHeights.append(leftEyeBoundingBox.height)
-            self.lEyeWidths.append(leftEyeBoundingBox.width)
-            self.lEyeXs.append(leftEyeBoundingBox.origin.x)
-            self.lEyeYs.append(leftEyeBoundingBox.origin.y)
-
-            self.rEyeHeights.append(rightEyeBoundingBox.height)
-            self.rEyeWidths.append(rightEyeBoundingBox.width)
-            self.rEyeXs.append(rightEyeBoundingBox.origin.x)
-            self.rEyeYs.append(rightEyeBoundingBox.origin.y)
-            
-            //self.totalFrames += 1
-
-            if faceValid {
-                self.faceValids.append(1)
-                self.numFaceDetections += 1
-            } else {
-                self.faceValids.append(0)
-            }
-
-            self.lEyeValids.append(leftEyeValid ? 1 : 0)
-            self.rEyeValids.append(rightEyeValid ? 1 : 0)
-            if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
-            
-            guard let frame = self.uiImageFromSampleBuffer(sampleBuffer: self.sampleBuffer!) else { return }
-            self.framesCache.append(frame)
-            
-            if self.framesCache.count >= self.maxFramesCacheSize {
-                if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-                    // use documentsDirectory for saving files
-                    for (index, frame) in self.framesCache.enumerated() {
-                        if let imageData = frame.jpegData(compressionQuality: 1.0) {
-                            let fileName = "session\(1)_\(index).jpg"
-                            let fileURL = documentsDirectory.appendingPathComponent(fileName)
-                            do {
-                                try imageData.write(to: fileURL)
-                            } catch {
-                                print("Error writing image to disk: \(error.localizedDescription)")
-                            }
-                        }
-                    }
-//                    if let imageData = image.jpegData(compressionQuality: 1.0) {
-//                        let fileName = "session\(session)_\(idx).jpg"
-//                        let fileURL = documentsDirectory.appendingPathComponent(fileName)
-//                        print("fileURL: \(fileURL)")
-//                        do {
-//                            try imageData.write(to: fileURL)
-//                        } catch {
-//                            print("Error writing image to disk: \(error.localizedDescription)")
-//                        }
-//                    }
-                }
-                
-//                for (index, frame) in self.framesCache.enumerated() {
-//                    self.uiImageToDisk(image: frame, session: 1, idx: index) // replace 1 with session number
-//                }
-                self.framesCache.removeAll()
-            }
-            
-            //self.uiImageToDisk(image: frame, session: 1, idx: self.frameNum)
+        self.faceHeights.append(faceBoundingBox.height)
+        self.faceWidths.append(faceBoundingBox.width)
+        self.faceXs.append(faceBoundingBox.origin.x)
+        self.faceYs.append(faceBoundingBox.origin.y)
+        
+        self.lEyeHeights.append(leftEyeBoundingBox.height)
+        self.lEyeWidths.append(leftEyeBoundingBox.width)
+        self.lEyeXs.append(leftEyeBoundingBox.origin.x)
+        self.lEyeYs.append(leftEyeBoundingBox.origin.y)
+        
+        self.rEyeHeights.append(rightEyeBoundingBox.height)
+        self.rEyeWidths.append(rightEyeBoundingBox.width)
+        self.rEyeXs.append(rightEyeBoundingBox.origin.x)
+        self.rEyeYs.append(rightEyeBoundingBox.origin.y)
+        
+        if faceValid {
+            self.faceValids.append(1)
+            self.numFaceDetections += 1
+        } else {
+            self.faceValids.append(0)
+        }
+        
+        self.lEyeValids.append(leftEyeValid ? 1 : 0)
+        self.rEyeValids.append(rightEyeValid ? 1 : 0)
+        if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
+        
+        guard let frame = self.uiImageFromSampleBuffer(sampleBuffer: self.sampleBuffer!) else { return }
+        self.framesCache.append(frame)
+        print("frames cache size: \(self.framesCache.count)")
+        
+        if self.framesCache.count >= self.maxFramesCacheSize {
+            self.saveFramesToDisk()
         }
     }
     
@@ -331,20 +306,27 @@ class FaceDetector: NSObject, ObservableObject {
         return image
     }
     
-    func uiImageToDisk(image: UIImage, session: Int, idx: Int) {
+    // writes frames stored in framesCache to disk, then clears the cache
+    func saveFramesToDisk() {
         if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             // use documentsDirectory for saving files
-            if let imageData = image.jpegData(compressionQuality: 1.0) {
-                let fileName = "session\(session)_\(idx).jpg"
-                let fileURL = documentsDirectory.appendingPathComponent(fileName)
-                print("fileURL: \(fileURL)")
-                do {
-                    try imageData.write(to: fileURL)
-                } catch {
-                    print("Error writing image to disk: \(error.localizedDescription)")
+            for frame in self.framesCache {
+                if let imageData = frame.jpegData(compressionQuality: 0.5) {
+                    let fileName = "session\(1)_\(self.frameNum).jpg"
+                    let fileURL = documentsDirectory.appendingPathComponent(fileName)
+                    do {
+                        print("writing \(fileName) to disk")
+                        try imageData.write(to: fileURL)
+                        self.frameNum += 1
+                        print("\(self.frameNum) number of disk writes")
+                    } catch {
+                        print("Error writing image to disk: \(error.localizedDescription)")
+                    }
                 }
             }
         }
+        
+        self.framesCache.removeAll()
     }
     
     // for debugging purposes
