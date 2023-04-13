@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9622FCB429BB941E004F927A /* CVPixelBuffer+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9622FCB329BB941E004F927A /* CVPixelBuffer+Helper.swift */; };
-		9622FCB629BB94BC004F927A /* ImagePredictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9622FCB529BB94BC004F927A /* ImagePredictor.swift */; };
 		9622FCB829BB9D06004F927A /* 00002__00000.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9622FCB729BB9D06004F927A /* 00002__00000.jpg */; };
 		9622FCBA29BB9D8B004F927A /* VideoInputConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9622FCB929BB9D8B004F927A /* VideoInputConstants.swift */; };
 		9622FCBC29CA2A95004F927A /* 00002__00000.json in Resources */ = {isa = PBXBuildFile; fileRef = 9622FCBB29CA2A95004F927A /* 00002__00000.json */; };
@@ -32,7 +30,6 @@
 		966B951129B1891F00B46864 /* SessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B951029B1891F00B46864 /* SessionData.swift */; };
 		96D3998D29BAE27400C32EBC /* model.pt in Resources */ = {isa = PBXBuildFile; fileRef = 96D3998C29BAE27400C32EBC /* model.pt */; };
 		96D3999229BAE31900C32EBC /* TorchModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 96D3999129BAE31900C32EBC /* TorchModule.mm */; };
-		96D3999429BAE6E800C32EBC /* UIImage+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D3999329BAE6E800C32EBC /* UIImage+Helper.swift */; };
 		FDB7A93627C3BE2C58541E85 /* libPods-GazeTrackApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C9F988624F761248C159B35 /* libPods-GazeTrackApp.a */; };
 /* End PBXBuildFile section */
 
@@ -53,8 +50,6 @@
 		17BFB3F4F00EDA142ECD9833 /* Pods-GazeTrackApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GazeTrackApp.release.xcconfig"; path = "Target Support Files/Pods-GazeTrackApp/Pods-GazeTrackApp.release.xcconfig"; sourceTree = "<group>"; };
 		6C9F988624F761248C159B35 /* libPods-GazeTrackApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GazeTrackApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		91592B84BCF90DD4CF37C3DA /* Pods-GazeTrackApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GazeTrackApp.debug.xcconfig"; path = "Target Support Files/Pods-GazeTrackApp/Pods-GazeTrackApp.debug.xcconfig"; sourceTree = "<group>"; };
-		9622FCB329BB941E004F927A /* CVPixelBuffer+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CVPixelBuffer+Helper.swift"; sourceTree = "<group>"; };
-		9622FCB529BB94BC004F927A /* ImagePredictor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePredictor.swift; sourceTree = "<group>"; };
 		9622FCB729BB9D06004F927A /* 00002__00000.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 00002__00000.jpg; sourceTree = "<group>"; };
 		9622FCB929BB9D8B004F927A /* VideoInputConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoInputConstants.swift; sourceTree = "<group>"; };
 		9622FCBB29CA2A95004F927A /* 00002__00000.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = 00002__00000.json; sourceTree = "<group>"; };
@@ -81,7 +76,6 @@
 		96D3998F29BAE2D500C32EBC /* TorchModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TorchModule.h; sourceTree = "<group>"; };
 		96D3999029BAE31900C32EBC /* GazeTrackApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "GazeTrackApp-Bridging-Header.h"; sourceTree = "<group>"; };
 		96D3999129BAE31900C32EBC /* TorchModule.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TorchModule.mm; sourceTree = "<group>"; };
-		96D3999329BAE6E800C32EBC /* UIImage+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+Helper.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,9 +165,6 @@
 				9644C336299E9806007E9725 /* Assets.xcassets */,
 				9644C338299E9806007E9725 /* Preview Content */,
 				966B951029B1891F00B46864 /* SessionData.swift */,
-				96D3999329BAE6E800C32EBC /* UIImage+Helper.swift */,
-				9622FCB329BB941E004F927A /* CVPixelBuffer+Helper.swift */,
-				9622FCB529BB94BC004F927A /* ImagePredictor.swift */,
 				9622FCB929BB9D8B004F927A /* VideoInputConstants.swift */,
 				966349FC29D8B20B00A198EB /* JSONEncodableDataModel.swift */,
 			);
@@ -309,7 +300,6 @@
 			files = (
 				966349FD29D8B20B00A198EB /* JSONEncodableDataModel.swift in Sources */,
 				966B950F29AE97B200B46864 /* AVCaptureVideoOrientation.swift in Sources */,
-				9622FCB629BB94BC004F927A /* ImagePredictor.swift in Sources */,
 				966B950D29AE97A100B46864 /* FaceDetector.swift in Sources */,
 				9644C335299E9801007E9725 /* ContentView.swift in Sources */,
 				9644C333299E9801007E9725 /* GazeTrackApp.swift in Sources */,
@@ -318,8 +308,6 @@
 				96D3999229BAE31900C32EBC /* TorchModule.mm in Sources */,
 				9622FCBA29BB9D8B004F927A /* VideoInputConstants.swift in Sources */,
 				966B950B29AE979200B46864 /* CaptureSession.swift in Sources */,
-				96D3999429BAE6E800C32EBC /* UIImage+Helper.swift in Sources */,
-				9622FCB429BB941E004F927A /* CVPixelBuffer+Helper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

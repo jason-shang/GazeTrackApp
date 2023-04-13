@@ -1,5 +1,5 @@
 //
-//  FrameProcessor.swift
+//  SessionData.swift
 //  GazeTrackApp
 //
 //  Created by Jason Shang on 3/2/23.
@@ -10,6 +10,9 @@ import CoreMedia
 import UIKit
 
 class SessionData {
+    
+    var sessionName: String
+    
     var faceHeights: [CGFloat]
     var faceWidths: [CGFloat]
     var faceXs: [CGFloat]
@@ -64,6 +67,31 @@ class SessionData {
         self.deviceName = "iPhone 13 Pro"
 
         self.frameNum = 0
+        
+        // initialize session name and then create the directory in document directory (will store all files from this session)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMddyy-HH:mm"
+        self.sessionName = dateFormatter.string(from: Date())
+        createDirectory(directoryName: self.sessionName)
+    }
+    
+    /// Create directory to which all data (frames & other json files) from the current session will be written
+    /// - Parameter directoryName: directory name that represents when this session is first started
+    func createDirectory(directoryName: String) {
+        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("Error accessing the document directory")
+            return
+        }
+
+        let folderURL = documentDirectory.appendingPathComponent(directoryName, isDirectory: true)
+
+        do {
+            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            // Handle error
+            print("Error creating directory")
+            return
+        }
     }
 
     /// Append face and eye bounding box data from the current sampleBuffer (frame) to the current session's data storage
@@ -106,6 +134,8 @@ class SessionData {
 
         // convert image to UIImage to save memory, then cache and flush when cache reaches max cache size
         guard let image = self.uiImageFromSampleBuffer(sampleBuffer: frame) else { return }
+        let size = image.size
+        print("Image width: \(size.width), height: \(size.height)")
         self.framesCache.append(image)
         print("frames cache size: \(self.framesCache.count)")
 
@@ -128,20 +158,24 @@ class SessionData {
 
     // writes frames stored in framesCache to disk, then clears the cache
     func saveFramesToDisk() {
-        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            // use documentsDirectory for saving files
-            for frame in self.framesCache {
-                if let imageData = frame.jpegData(compressionQuality: 0.5) { // could adjust compression quality (1.0 max, 0.0 min)
-                    let fileName = "session\(1)_\(self.frameNum).jpg"
-                    let fileURL = documentsDirectory.appendingPathComponent(fileName)
-                    do {
-                        print("writing \(fileName) to disk")
-                        try imageData.write(to: fileURL)
-                        self.frameNum += 1
-                        print("\(self.frameNum) number of disk writes")
-                    } catch {
-                        print("Error writing image to disk: \(error.localizedDescription)")
-                    }
+        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("Error accessing the document directory")
+            return
+        }
+        
+        // use documentsDirectory for saving files
+        for frame in self.framesCache {
+            if let imageData = frame.jpegData(compressionQuality: 0.5) { // could adjust compression quality (1.0 max, 0.0 min)
+                let fileName = "frame_\(self.frameNum).jpg"
+                let folderURL = documentDirectory.appendingPathComponent(self.sessionName, isDirectory: true)
+                let fileURL = folderURL.appendingPathComponent(fileName)
+                do {
+                    print("writing \(fileName) to disk")
+                    try imageData.write(to: fileURL)
+                    self.frameNum += 1
+                    print("\(self.frameNum) number of disk writes")
+                } catch {
+                    print("Error writing image to disk: \(error.localizedDescription)")
                 }
             }
         }
@@ -172,8 +206,13 @@ class SessionData {
     /// - Parameter data: JSONEncodableDataModel passed in from FaceDetector
     func saveAsJSON<T: JSONEncodableDataModel>(data: T, fileName: String) {
         guard let json = data.toJSON() else { return }
-        let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let fileURL = documentDirectory.appendingPathComponent(fileName).appendingPathExtension("json")
+        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("Error accessing documents directory!")
+            return
+        }
+        
+        let folderURL = documentDirectory.appendingPathComponent(self.sessionName, isDirectory: true)
+        let fileURL = folderURL.appendingPathComponent(fileName).appendingPathExtension("json")
 
         do {
             try json.write(to: fileURL)

@@ -17,12 +17,17 @@ class FaceDetector: NSObject, ObservableObject {
     
     @Published var faceCaptureQuality: Float = 0.0
     
-    // relative to top left corner of full frame; will be in image/device coordinates
-    @Published var faceBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    // relative to top left corner of full frame
+    @Published var faceBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // device coordinates (for display)
+    @Published var faceBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // image coordinates (for session data)
     
-    // relative to top-left corner of face bounding box (image/device coordinates)
-    @Published var leftEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
-    @Published var rightEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    // relative to top-left corner of face bounding box
+    // 1. device coordinates
+    @Published var leftEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    @Published var rightEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    // 2. image coordinates
+    @Published var leftEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+    @Published var rightEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     
     @Published var landmarks: VNFaceLandmarks2D?
     
@@ -30,9 +35,12 @@ class FaceDetector: NSObject, ObservableObject {
     @Published var roll: Float = 0
     @Published var pitch: Float = 0
     
-    private var faceValid: Bool = true
-    private var leftEyeValid: Bool = true
-    private var rightEyeValid: Bool = true
+    private var imageWidth: Int = 0
+    private var imageHeight: Int = 0
+    
+    private var faceValid: Bool = false
+    private var leftEyeValid: Bool = false
+    private var rightEyeValid: Bool = false
     
     private var sampleBuffer: CMSampleBuffer?
     
@@ -79,9 +87,18 @@ class FaceDetector: NSObject, ObservableObject {
                     return
                 }
                 
+                guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
+                    print("Error: cannot get dimensions from sample buffer.")
+                    return
+                }
+                let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+                self.imageWidth = Int(dimensions.width)
+                self.imageHeight = Int(dimensions.height)
+                
                 try self.detect(sampleBuffer: sampleBuffer)
                 
-                captureSession.sessionData!.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
+                // TODO: safe unwrap? 
+                captureSession.sessionData!.updateSessionData(faceBoundingBox: self.faceBoundingBoxImage, leftEyeBoundingBox: self.leftEyeBoundingBoxImage, rightEyeBoundingBox: self.rightEyeBoundingBoxImage, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
             } catch {
                 print("Error has been thrown")
             }
@@ -138,13 +155,23 @@ class FaceDetector: NSObject, ObservableObject {
     /// 4. capture quality
     /// - Parameter result: VNFaceObservation result
     func processFaceObservationResult(result: VNFaceObservation) {
+        if self.imageWidth > 0 && self.imageHeight > 0 {
+            self.faceValid = true
+            self.leftEyeValid = true
+            self.rightEyeValid = true
+        }
+        
         // get device bounds
         let bounds = UIScreen.main.bounds
         let deviceWidth = Int(bounds.size.width)
         let deviceHeight = Int(bounds.size.height)
+        print("device width: \(deviceWidth), height: \(deviceHeight)")
 
-        // get face bounding box in image coordinates
-        self.faceBoundingBox = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
+        // get face bounding box relative to device coordinates
+        self.faceBoundingBoxDevice = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
+        
+        // get face bounding box relative to image coordinates
+        self.faceBoundingBoxImage = VNImageRectForNormalizedRect(result.boundingBox, self.imageWidth, self.imageHeight)
         
         if let yaw = result.yaw,
            let pitch = result.pitch,
@@ -163,9 +190,13 @@ class FaceDetector: NSObject, ObservableObject {
         let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
         let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
         
-        self.leftEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, imageCoordsFaceBoundingBox: self.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight)
+        // 1. device coordinates
+        self.leftEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
+        self.rightEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
         
-        self.rightEyeBoundingBox = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, imageCoordsFaceBoundingBox: self.faceBoundingBox, deviceWidth: deviceWidth, deviceHeight: deviceHeight)
+        // 2. image coordinates
+        self.leftEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.imageWidth, height: self.imageHeight)
+        self.rightEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.imageWidth, height: self.imageHeight)
         
         if let captureQuality = result.faceCaptureQuality {
             self.faceCaptureQuality = captureQuality
@@ -175,12 +206,12 @@ class FaceDetector: NSObject, ObservableObject {
     /// Make eye bounding box based on the eye landmark and heuristics (proportion relative to the face)
     /// - Parameters:
     ///   - eyebrowPts: 1st point is the left point, the image coordinates of which will serve as the origin point of the eye bounding box; 2nd point is the right point, used to determine the width of the bounding box (if we're using that measure instead of the ratio heuristic)
-    ///   - normalizedFaceBoundingBox: face bounding box in normalized coordinates (used for converting eyebrowPts to image coordinates)
-    ///   - imageCoordsFaceBoundingBox: face bounding box in image coordinates (used for width calculation)
-    ///   - deviceWidth: width
-    ///   - deviceHeight: height
-    /// - Returns: CGRect of eye bounding box in image coordinates
-    func makeEyeBoundingBox(eyebrowPts: [CGPoint], normalizedFaceBoundingBox: CGRect, imageCoordsFaceBoundingBox: CGRect, deviceWidth: Int, deviceHeight: Int) -> CGRect {
+    ///   - normalizedFaceBoundingBox: face bounding box in normalized coordinates (used for converting eyebrowPts to image/device coordinates)
+    ///   - faceBoundingBox: face bounding box in image or device coordinates (used for width calculation)
+    ///   - width: width by which to convert the normalized coordinates to either device or image coordinates (either device width or imageWidth)
+    ///   - height: height by which to convert the normalized coordinates to either device or image coordinates (either device height or imageHeight)
+    /// - Returns: CGRect of eye bounding box in either image or device coordinates, depending on whether the faceBoundingBox, width, height passed in are in image or device coordinates
+    func makeEyeBoundingBox(eyebrowPts: [CGPoint], normalizedFaceBoundingBox: CGRect, faceBoundingBox: CGRect, width: Int, height: Int) -> CGRect {
         if (eyebrowPts.count == 0) {
             return CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
         }
@@ -195,8 +226,8 @@ class FaceDetector: NSObject, ObservableObject {
         let vnImagePointLeft = VNImagePointForFaceLandmarkPoint(
             vectoredEyebrowLeft,
             normalizedFaceBoundingBox,
-            deviceWidth,
-            deviceHeight)
+            width,
+            height)
         
         let eyebrowRight: CGPoint = eyebrowPts[1]
         let vectoredEyebrowRight = vector2(Float(eyebrowRight.x),Float(eyebrowRight.y))
@@ -204,8 +235,8 @@ class FaceDetector: NSObject, ObservableObject {
         let vnImagePointRight = VNImagePointForFaceLandmarkPoint(
             vectoredEyebrowRight,
             normalizedFaceBoundingBox,
-            deviceWidth,
-            deviceHeight)
+            width,
+            height)
     
         let width = vnImagePointRight.x - vnImagePointLeft.x // alternate method for calculating width
         
@@ -213,8 +244,8 @@ class FaceDetector: NSObject, ObservableObject {
         // TODO: refine this proportion (average of all ratios in GazeCapture dataset?)
         let heightProportion = 4.0
         let widthProportion = 4.0
-        let eyeBoundingBoxHeight = imageCoordsFaceBoundingBox.height/heightProportion
-        let eyeBoundingBoxWidth = imageCoordsFaceBoundingBox.width/widthProportion
+        let eyeBoundingBoxHeight = faceBoundingBox.height/heightProportion
+        let eyeBoundingBoxWidth = faceBoundingBox.width/widthProportion
         
         return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: eyeBoundingBoxWidth, height: eyeBoundingBoxHeight)
     }

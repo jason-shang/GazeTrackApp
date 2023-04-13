@@ -31,7 +31,6 @@ struct ContentView: View {
                     captureSession.start()
                 } else {
                     captureSession.stop()
-                    // export data (could refactor the faceDetector.framesCache.count into here)
                 }
             }) {
                 Text(recording ? "Stop" : "Start")
@@ -61,9 +60,9 @@ struct ContentView: View {
              // check VNFaceLandmarks2D for more documentation about landmarks - https://developer.apple.com/documentation/vision/vnfacelandmarks2d
 //            guard let leftEye = landmarks?.leftEye else { return }
             
-            self.faceBoundingBox = faceDetector.faceBoundingBox
-            self.leftEyeBoundingBox = faceDetector.leftEyeBoundingBox
-            self.rightEyeBoundingBox = faceDetector.rightEyeBoundingBox
+            self.faceBoundingBox = faceDetector.faceBoundingBoxDevice
+            self.leftEyeBoundingBox = faceDetector.leftEyeBoundingBoxDevice
+            self.rightEyeBoundingBox = faceDetector.rightEyeBoundingBoxDevice
         }
     }
     
@@ -88,8 +87,8 @@ struct ContentView: View {
                             .stroke(Color.red, lineWidth: 2.0)
                         
                         // CGRect origin points
-                        Circle().fill(Color.green).frame(width: 3, height: 3).position(faceDetector.leftEyeBoundingBox.origin)
-                        Circle().fill(Color.green).frame(width: 3, height: 3).position(faceDetector.rightEyeBoundingBox.origin)
+                        Circle().fill(Color.green).frame(width: 3, height: 3).position(self.leftEyeBoundingBox.origin)
+                        Circle().fill(Color.green).frame(width: 3, height: 3).position(self.rightEyeBoundingBox.origin)
                         
                         // display all 76 face landmarks points
 //                        ForEach(self.allPoints, id: \.self) { point in
@@ -134,32 +133,6 @@ struct ContentView: View {
                 Text(String(format: "Yaw: %.2f", faceDetector.yaw))
             }).padding().background(Color.gray)
     }
-    
-    // ===================== test model deployment on mobile =====================
-  
-//    @ViewBuilder
-//    func imagePredictorView() -> some View {
-//        Text(String(describing: predictImage()))
-//    }
-//
-//    func predictImage() -> [NSNumber] {
-//        var inferencer = ImagePredictor()
-//        var pixelBuffer = [Float32]()
-//        if let image = UIImage(named: "00002__00000") {
-//            let resizedImage = image.resized(to: CGSize(width: CGFloat(VideoInputConstants.inputWidth), height: CGFloat(VideoInputConstants.inputHeight)))
-//
-//            guard let frameBuffer = resizedImage.normalized() else { return [] }
-//            pixelBuffer += frameBuffer
-//        }
-//
-//        guard let predictions = inferencer.module.predict(image: &pixelBuffer) else {
-//            return []
-//        }
-//
-//        return predictions
-//    }
-  
-  // =============================================================================
 }
 
 extension CGPoint: Hashable {
