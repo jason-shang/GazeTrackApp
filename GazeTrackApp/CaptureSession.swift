@@ -12,6 +12,7 @@ class CaptureSession: NSObject, ObservableObject {
     @Published var sampleBuffer: CMSampleBuffer?
     
     var captureSession: AVCaptureSession?
+    var sessionData: SessionData?
     
     func setup() {
         var allowedAccess = false
@@ -50,7 +51,6 @@ class CaptureSession: NSObject, ObservableObject {
     }
     
     func start() {
-        // TODO: start data collection here!
         guard let captureSession = self.captureSession else {
             return
         }
@@ -58,6 +58,7 @@ class CaptureSession: NSObject, ObservableObject {
         if (!captureSession.isRunning) {
             DispatchQueue.global(qos: .background).async {
                 captureSession.startRunning()
+                self.sessionData = SessionData()
             }
         }
     }
@@ -69,6 +70,12 @@ class CaptureSession: NSObject, ObservableObject {
         if (captureSession.isRunning) {
             captureSession.stopRunning()
         }
+        
+        // write remaining frames on the frames cache to disk
+        if self.sessionData!.framesCache.count > 0 {
+            self.sessionData!.saveFramesToDisk()
+        }
+        self.sessionData!.checkData()
     }
 }
 

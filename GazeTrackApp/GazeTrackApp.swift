@@ -11,9 +11,15 @@ import Combine
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     let captureSession = CaptureSession()
-    let faceDetector = FaceDetector()
+//    let faceDetector = FaceDetector()
+    let faceDetector: FaceDetector
     
     var cancellables = [AnyCancellable]()
+    
+    override init() {
+        self.faceDetector = FaceDetector(captureSession: self.captureSession)
+        super.init()
+    }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         captureSession.$sampleBuffer

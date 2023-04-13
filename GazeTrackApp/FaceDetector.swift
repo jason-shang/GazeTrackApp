@@ -13,6 +13,8 @@ import AVFoundation
 
 class FaceDetector: NSObject, ObservableObject {
     
+    private var captureSession: CaptureSession
+    
     @Published var faceCaptureQuality: Float = 0.0
     
     // relative to top left corner of full frame; will be in image/device coordinates
@@ -67,7 +69,8 @@ class FaceDetector: NSObject, ObservableObject {
     
     var frameNum: Int = 0
     
-    override init() {
+    init(captureSession: CaptureSession) {
+        self.captureSession = captureSession
         super.init()
         subject.sink { sampleBuffer in
             self.sampleBuffer = sampleBuffer
@@ -78,7 +81,7 @@ class FaceDetector: NSObject, ObservableObject {
                 
                 try self.detect(sampleBuffer: sampleBuffer)
                 
-                self.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
+                captureSession.sessionData!.updateSessionData(faceBoundingBox: self.faceBoundingBox, leftEyeBoundingBox: self.leftEyeBoundingBox, rightEyeBoundingBox: self.rightEyeBoundingBox, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
             } catch {
                 print("Error has been thrown")
             }
@@ -217,33 +220,33 @@ class FaceDetector: NSObject, ObservableObject {
     }
     
     /// Resets all face, eye, frame and device data; call when we are starting a new recording/experiment
-    func startDataCollection() {
-        self.faceHeights = []
-        self.faceWidths = []
-        self.faceXs = []
-        self.faceYs = []
-        self.faceValids = []
-        
-        self.lEyeHeights = []
-        self.lEyeWidths = []
-        self.lEyeXs = []
-        self.lEyeYs = []
-        self.lEyeValids = []
-        
-        self.rEyeHeights = []
-        self.rEyeWidths = []
-        self.rEyeXs = []
-        self.rEyeYs = []
-        self.rEyeValids = []
-        
-        self.framesCache = []
-        self.numFaceDetections = 0
-        self.numEyeDetections = 0
-        
-        // for debugging
-        self.frameNum = 0
-        self.deviceName = "iPhone 13 Pro" // account for other models later (can't just use UIDevice.current.model - doesn't give name)
-    }
+//    func startDataCollection() {
+//        self.faceHeights = []
+//        self.faceWidths = []
+//        self.faceXs = []
+//        self.faceYs = []
+//        self.faceValids = []
+//
+//        self.lEyeHeights = []
+//        self.lEyeWidths = []
+//        self.lEyeXs = []
+//        self.lEyeYs = []
+//        self.lEyeValids = []
+//
+//        self.rEyeHeights = []
+//        self.rEyeWidths = []
+//        self.rEyeXs = []
+//        self.rEyeYs = []
+//        self.rEyeValids = []
+//
+//        self.framesCache = []
+//        self.numFaceDetections = 0
+//        self.numEyeDetections = 0
+//
+//        // for debugging
+//        self.frameNum = 0
+//        self.deviceName = "iPhone 13 Pro" // account for other models later (can't just use UIDevice.current.model - doesn't give name)
+//    }
     
     /// Append face and eye bounding box data from the current sampleBuffer (frame) to the current session's data storage
     /// - Parameters:
@@ -255,103 +258,103 @@ class FaceDetector: NSObject, ObservableObject {
     ///   - faceValid:
     ///   - leftEyeValid:
     ///   - rightEyeValid:
-    func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, faceCaptureQuality: Float, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
-        self.faceHeights.append(faceBoundingBox.height)
-        self.faceWidths.append(faceBoundingBox.width)
-        self.faceXs.append(faceBoundingBox.origin.x)
-        self.faceYs.append(faceBoundingBox.origin.y)
-        
-        self.lEyeHeights.append(leftEyeBoundingBox.height)
-        self.lEyeWidths.append(leftEyeBoundingBox.width)
-        self.lEyeXs.append(leftEyeBoundingBox.origin.x)
-        self.lEyeYs.append(leftEyeBoundingBox.origin.y)
-        
-        self.rEyeHeights.append(rightEyeBoundingBox.height)
-        self.rEyeWidths.append(rightEyeBoundingBox.width)
-        self.rEyeXs.append(rightEyeBoundingBox.origin.x)
-        self.rEyeYs.append(rightEyeBoundingBox.origin.y)
-        
-        if faceValid {
-            self.faceValids.append(1)
-            self.numFaceDetections += 1
-        } else {
-            self.faceValids.append(0)
-        }
-        
-        self.lEyeValids.append(leftEyeValid ? 1 : 0)
-        self.rEyeValids.append(rightEyeValid ? 1 : 0)
-        if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
-        
-        guard let frame = self.uiImageFromSampleBuffer(sampleBuffer: self.sampleBuffer!) else { return }
-        self.framesCache.append(frame)
-        print("frames cache size: \(self.framesCache.count)")
-        
-        if self.framesCache.count >= self.maxFramesCacheSize {
-            self.saveFramesToDisk()
-        }
-    }
-    
-    func uiImageFromSampleBuffer(sampleBuffer: CMSampleBuffer) -> UIImage? {
-        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            return nil
-        }
-        let ciimage = CIImage(cvPixelBuffer: imageBuffer)
-        
-        let context = CIContext(options: nil)
-        let cgImage = context.createCGImage(ciimage, from: ciimage.extent)!
-        let image = UIImage(cgImage: cgImage)
-        return image
-    }
-    
-    // writes frames stored in framesCache to disk, then clears the cache
-    func saveFramesToDisk() {
-        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            // use documentsDirectory for saving files
-            for frame in self.framesCache {
-                if let imageData = frame.jpegData(compressionQuality: 0.5) {
-                    let fileName = "session\(1)_\(self.frameNum).jpg"
-                    let fileURL = documentsDirectory.appendingPathComponent(fileName)
-                    do {
-                        print("writing \(fileName) to disk")
-                        try imageData.write(to: fileURL)
-                        self.frameNum += 1
-                        print("\(self.frameNum) number of disk writes")
-                    } catch {
-                        print("Error writing image to disk: \(error.localizedDescription)")
-                    }
-                }
-            }
-        }
-        
-        self.framesCache.removeAll()
-    }
-    
-    // for debugging purposes
-    func checkData() {
-        print("faceHeights: \(self.faceHeights.count)")
-        print("faceWidths: \(self.faceWidths.count)")
-        print("faceXs: \(self.faceXs.count)")
-        print("faceYs: \(self.faceYs.count)")
-        print("faceValids: \(self.faceValids.count)")
-        
-        print("==================")
-        print(self.lEyeHeights.count)
-        print(self.lEyeWidths.count)
-        print(self.lEyeXs.count)
-        print(self.lEyeYs.count)
-        print(self.lEyeValids.count)
-        
-        print("==================")
-        print(self.rEyeHeights.count)
-        print(self.rEyeWidths.count)
-        print(self.rEyeXs.count)
-        print(self.rEyeYs.count)
-        print(self.rEyeValids.count)
-        
-        print("==================")
-        print("frames: \(self.framesCache.count)")
-        print("total number of frames: \(self.frameNum)")
-        print("numFaceDetections: \(self.numFaceDetections)")
-        print("numEyeDetections: \(self.numEyeDetections)")
-    }
+//    func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, faceCaptureQuality: Float, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
+//        self.faceHeights.append(faceBoundingBox.height)
+//        self.faceWidths.append(faceBoundingBox.width)
+//        self.faceXs.append(faceBoundingBox.origin.x)
+//        self.faceYs.append(faceBoundingBox.origin.y)
+//
+//        self.lEyeHeights.append(leftEyeBoundingBox.height)
+//        self.lEyeWidths.append(leftEyeBoundingBox.width)
+//        self.lEyeXs.append(leftEyeBoundingBox.origin.x)
+//        self.lEyeYs.append(leftEyeBoundingBox.origin.y)
+//
+//        self.rEyeHeights.append(rightEyeBoundingBox.height)
+//        self.rEyeWidths.append(rightEyeBoundingBox.width)
+//        self.rEyeXs.append(rightEyeBoundingBox.origin.x)
+//        self.rEyeYs.append(rightEyeBoundingBox.origin.y)
+//
+//        if faceValid {
+//            self.faceValids.append(1)
+//            self.numFaceDetections += 1
+//        } else {
+//            self.faceValids.append(0)
+//        }
+//
+//        self.lEyeValids.append(leftEyeValid ? 1 : 0)
+//        self.rEyeValids.append(rightEyeValid ? 1 : 0)
+//        if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
+//
+//        guard let image = self.uiImageFromSampleBuffer(sampleBuffer: frame) else { return }
+//        self.framesCache.append(image)
+//        print("frames cache size: \(self.framesCache.count)")
+//
+//        if self.framesCache.count >= self.maxFramesCacheSize {
+//            self.saveFramesToDisk()
+//        }
+//    }
+//
+//    func uiImageFromSampleBuffer(sampleBuffer: CMSampleBuffer) -> UIImage? {
+//        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+//            return nil
+//        }
+//        let ciimage = CIImage(cvPixelBuffer: imageBuffer)
+//
+//        let context = CIContext(options: nil)
+//        let cgImage = context.createCGImage(ciimage, from: ciimage.extent)!
+//        let image = UIImage(cgImage: cgImage)
+//        return image
+//    }
+//
+//    // writes frames stored in framesCache to disk, then clears the cache
+//    func saveFramesToDisk() {
+//        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+//            // use documentsDirectory for saving files
+//            for frame in self.framesCache {
+//                if let imageData = frame.jpegData(compressionQuality: 0.5) {
+//                    let fileName = "session\(1)_\(self.frameNum).jpg"
+//                    let fileURL = documentsDirectory.appendingPathComponent(fileName)
+//                    do {
+//                        print("writing \(fileName) to disk")
+//                        try imageData.write(to: fileURL)
+//                        self.frameNum += 1
+//                        print("\(self.frameNum) number of disk writes")
+//                    } catch {
+//                        print("Error writing image to disk: \(error.localizedDescription)")
+//                    }
+//                }
+//            }
+//        }
+//
+//        self.framesCache.removeAll()
+//    }
+//
+//    // for debugging purposes
+//    func checkData() {
+//        print("faceHeights: \(self.faceHeights.count)")
+//        print("faceWidths: \(self.faceWidths.count)")
+//        print("faceXs: \(self.faceXs.count)")
+//        print("faceYs: \(self.faceYs.count)")
+//        print("faceValids: \(self.faceValids.count)")
+//
+//        print("==================")
+//        print(self.lEyeHeights.count)
+//        print(self.lEyeWidths.count)
+//        print(self.lEyeXs.count)
+//        print(self.lEyeYs.count)
+//        print(self.lEyeValids.count)
+//
+//        print("==================")
+//        print(self.rEyeHeights.count)
+//        print(self.rEyeWidths.count)
+//        print(self.rEyeXs.count)
+//        print(self.rEyeYs.count)
+//        print(self.rEyeValids.count)
+//
+//        print("==================")
+//        print("frames: \(self.framesCache.count)")
+//        print("total number of frames: \(self.frameNum)")
+//        print("numFaceDetections: \(self.numFaceDetections)")
+//        print("numEyeDetections: \(self.numEyeDetections)")
+//    }
 }
