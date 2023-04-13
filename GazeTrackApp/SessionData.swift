@@ -102,7 +102,9 @@ class SessionData {
         self.lEyeValids.append(leftEyeValid ? 1 : 0)
         self.rEyeValids.append(rightEyeValid ? 1 : 0)
         if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
+        self.frameNames.append("session\(1)_\(self.frameNum).jpg") //TODO: update session index
 
+        // convert image to UIImage to save memory, then cache and flush when cache reaches max cache size
         guard let image = self.uiImageFromSampleBuffer(sampleBuffer: frame) else { return }
         self.framesCache.append(image)
         print("frames cache size: \(self.framesCache.count)")
@@ -129,7 +131,7 @@ class SessionData {
         if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             // use documentsDirectory for saving files
             for frame in self.framesCache {
-                if let imageData = frame.jpegData(compressionQuality: 0.5) {
+                if let imageData = frame.jpegData(compressionQuality: 0.5) { // could adjust compression quality (1.0 max, 0.0 min)
                     let fileName = "session\(1)_\(self.frameNum).jpg"
                     let fileURL = documentsDirectory.appendingPathComponent(fileName)
                     do {
@@ -145,6 +147,25 @@ class SessionData {
         }
 
         self.framesCache.removeAll()
+    }
+    
+    func processAndSaveData() {
+        let faceData = FaceOrEyeData(heights: self.faceHeights, widths: self.faceWidths, xs: self.faceXs, ys: self.faceYs, valids: self.faceValids)
+        let lEyeData = FaceOrEyeData(heights: self.lEyeHeights, widths: self.lEyeWidths, xs: self.lEyeXs, ys: self.lEyeYs, valids: self.lEyeValids)
+        let rEyeData = FaceOrEyeData(heights: self.rEyeHeights, widths: self.rEyeWidths, xs: self.rEyeXs, ys: self.rEyeYs, valids: self.rEyeValids)
+        let framesData = FramesData(frameNames: self.frameNames)
+        let infoData = InfoData(totalFrames: self.frameNum, numFaceDetections: self.numFaceDetections, numEyeDetections: self.numEyeDetections, deviceNmae: self.deviceName)
+        
+        // still missing:
+        // dotInfo.json
+        // faceGrid.json
+        // screen.json
+        
+        saveAsJSON(data: faceData, fileName: "session\(1)Face")
+        saveAsJSON(data: lEyeData, fileName: "session\(1)lEye")
+        saveAsJSON(data: rEyeData, fileName: "session\(1)rEye")
+        saveAsJSON(data: framesData, fileName: "session\(1)Frames")
+        saveAsJSON(data: infoData, fileName: "session\(1)Info")
     }
 
     /// saves data to app's documents directory (local storage, no Cloud backup)

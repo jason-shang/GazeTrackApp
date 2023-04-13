@@ -29,13 +29,8 @@ struct ContentView: View {
                 if recording {
                     captureSession.setup()
                     captureSession.start()
-//                    faceDetector.startDataCollection()
                 } else {
                     captureSession.stop()
-//                    let _ = print("leftEyeXs: \(String(describing: faceDetector.lEyeXs))")
-//                    let _ = print("leftEyeYs: \(String(describing: faceDetector.lEyeYs))")
-//                    let _ = print("faceBoxXs: \(String(describing: faceDetector.faceXs))")
-//                    let _ = print("faceBoxYs: \(String(describing: faceDetector.faceYs))")
                     // export data (could refactor the faceDetector.framesCache.count into here)
                 }
             }) {

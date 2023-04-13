@@ -12,11 +12,11 @@ protocol JSONEncodableDataModel {
 }
 
 /// gazecapture appleFace.json, appleLeftEye.json & appleRightEye.json
-struct FaceAndEyeData: Codable, JSONEncodableDataModel {
-    var heights: [Float]
-    var widths: [Float]
-    var xs: [Float]
-    var ys: [Float]
+struct FaceOrEyeData: Codable, JSONEncodableDataModel {
+    var heights: [CGFloat]
+    var widths: [CGFloat]
+    var xs: [CGFloat]
+    var ys: [CGFloat]
     var valids: [Int]
     
     func toJSON() -> Data? {
@@ -40,7 +40,7 @@ struct DotData: Codable, JSONEncodableDataModel {
 }
 
 /// gazecapture frames.json
-struct FrameData: Codable, JSONEncodableDataModel {
+struct FramesData: Codable, JSONEncodableDataModel {
     var frameNames: [String]
     
     func toJSON() -> Data? {

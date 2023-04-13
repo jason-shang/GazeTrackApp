@@ -11,7 +11,6 @@ import Combine
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     let captureSession = CaptureSession()
-//    let faceDetector = FaceDetector()
     let faceDetector: FaceDetector
     
     var cancellables = [AnyCancellable]()

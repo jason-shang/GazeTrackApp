@@ -2,7 +2,7 @@
 //  CaptureSession.swift
 //  GazeTrackApp
 //
-//  Created by Tobias Wissmüller on 12.01.22.
+//  Created by Jason Shang on 3/2/23.
 //
 
 import Foundation
@@ -75,7 +75,12 @@ class CaptureSession: NSObject, ObservableObject {
         if self.sessionData!.framesCache.count > 0 {
             self.sessionData!.saveFramesToDisk()
         }
+        
+        // for debugging purposes
         self.sessionData!.checkData()
+        
+        // write all collected info to disk as JSON files
+        self.sessionData!.processAndSaveData()
     }
 }
 
@@ -86,6 +91,3 @@ extension CaptureSession: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
     }
 }
-
-
-
