@@ -135,15 +135,17 @@ class SessionData {
         // convert image to UIImage to save memory, then cache and flush when cache reaches max cache size
         guard let image = self.uiImageFromSampleBuffer(sampleBuffer: frame) else { return }
         let size = image.size
-        print("Image width: \(size.width), height: \(size.height)")
+        print("UIImage width: \(size.width), height: \(size.height)")
         self.framesCache.append(image)
-        print("frames cache size: \(self.framesCache.count)")
 
         if self.framesCache.count >= self.maxFramesCacheSize {
             self.saveFramesToDisk()
         }
     }
-
+    
+    /// Converts image from a sampleBuffer to a UIImage (less memory footprint and allows for direct conversion to jpeg format)
+    /// - Parameter sampleBuffer: CMSampleBuffer object representing the current image frame
+    /// - Returns: sampleBuffer converted into a UIImage (same dimensions as sampleBuffer)
     func uiImageFromSampleBuffer(sampleBuffer: CMSampleBuffer) -> UIImage? {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return nil
@@ -155,8 +157,27 @@ class SessionData {
         let image = UIImage(cgImage: cgImage)
         return image
     }
+    
+    func scaleImageToScreenSize(image: UIImage) {
+        let screenSize = UIScreen.main.bounds.size
+        let scale = UIScreen.main.scale
+        let outputSize = CGSize(width: screenSize.width * scale, height: screenSize.height * scale)
+        print("output size width: \(outputSize.width), height: \(outputSize.height)")
+        
+//        let widthScaleFactor = screenSize.width / image.size.width
+//        let heightScaleFactor = screenSize.height / image.size.height
+////        let scaleFactor = min(screenSize.width / image.size.width, screenSize.height / image.size.height)
+//        let newSize = CGSize(width: Int(image.size.width * widthScaleFactor), height: Int(image.size.height * heightScaleFactor))
+//
+//        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+//        image.draw(in: CGRect(origin: .zero, size: newSize))
+//        let scaledImage = UIGraphicsGetImageFromCurrentImageContext()
+//        UIGraphicsEndImageContext()
+//
+//        return scaledImage!
+    }
 
-    // writes frames stored in framesCache to disk, then clears the cache
+    /// writes image frames stored in framesCache to disk, then clears the cache
     func saveFramesToDisk() {
         guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
             print("Error accessing the document directory")
@@ -165,6 +186,9 @@ class SessionData {
         
         // use documentsDirectory for saving files
         for frame in self.framesCache {
+            // scale image to device coordinates
+//            let scaledImage = self.scaleImageToScreenSize(image: frame)
+            
             if let imageData = frame.jpegData(compressionQuality: 0.5) { // could adjust compression quality (1.0 max, 0.0 min)
                 let fileName = "frame_\(self.frameNum).jpg"
                 let folderURL = documentDirectory.appendingPathComponent(self.sessionName, isDirectory: true)
@@ -173,7 +197,7 @@ class SessionData {
                     print("writing \(fileName) to disk")
                     try imageData.write(to: fileURL)
                     self.frameNum += 1
-                    print("\(self.frameNum) number of disk writes")
+//                    print("\(self.frameNum) number of disk writes")
                 } catch {
                     print("Error writing image to disk: \(error.localizedDescription)")
                 }
@@ -183,6 +207,7 @@ class SessionData {
         self.framesCache.removeAll()
     }
     
+    /// write various data stores to documentDirectory as json files
     func processAndSaveData() {
         let faceData = FaceOrEyeData(heights: self.faceHeights, widths: self.faceWidths, xs: self.faceXs, ys: self.faceYs, valids: self.faceValids)
         let lEyeData = FaceOrEyeData(heights: self.lEyeHeights, widths: self.lEyeWidths, xs: self.lEyeXs, ys: self.lEyeYs, valids: self.lEyeValids)
@@ -195,11 +220,11 @@ class SessionData {
         // faceGrid.json
         // screen.json
         
-        saveAsJSON(data: faceData, fileName: "session\(1)Face")
-        saveAsJSON(data: lEyeData, fileName: "session\(1)lEye")
-        saveAsJSON(data: rEyeData, fileName: "session\(1)rEye")
-        saveAsJSON(data: framesData, fileName: "session\(1)Frames")
-        saveAsJSON(data: infoData, fileName: "session\(1)Info")
+        saveAsJSON(data: faceData, fileName: "appleFace")
+        saveAsJSON(data: lEyeData, fileName: "appleLeftEye")
+        saveAsJSON(data: rEyeData, fileName: "appleRightEye")
+        saveAsJSON(data: framesData, fileName: "frames")
+        saveAsJSON(data: infoData, fileName: "info")
     }
 
     /// saves data to app's documents directory (local storage, no Cloud backup)
@@ -216,7 +241,7 @@ class SessionData {
 
         do {
             try json.write(to: fileURL)
-            print("Saved to \(fileURL.absoluteString)")
+//            print("Saved to \(fileURL.absoluteString)")
         } catch {
             print("Error writing JSON data: \(error)")
         }

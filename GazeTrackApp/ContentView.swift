@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  GazeTrackApp
 //
-//  Created by Jason Shang on 03.01.23.
+//  Created by Jason Shang on 03/01/23.
 //
 
 import SwiftUI
@@ -17,6 +17,7 @@ struct ContentView: View {
     @State var faceBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     @State var leftEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     @State var rightEyeBoundingBox = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+//    @State var allPoints = [CGPoint]()
     
     // real video preview
     var body: some View {
@@ -63,6 +64,9 @@ struct ContentView: View {
             self.faceBoundingBox = faceDetector.faceBoundingBoxDevice
             self.leftEyeBoundingBox = faceDetector.leftEyeBoundingBoxDevice
             self.rightEyeBoundingBox = faceDetector.rightEyeBoundingBoxDevice
+            
+//            guard let allPoints = landmarks?.allPoints else { return }
+//            self.allPoints = allPoints.normalizedPoints
         }
     }
     
@@ -87,6 +91,7 @@ struct ContentView: View {
                             .stroke(Color.red, lineWidth: 2.0)
                         
                         // CGRect origin points
+                        Circle().fill(Color.green).frame(width: 3, height: 3).position(self.faceBoundingBox.origin)
                         Circle().fill(Color.green).frame(width: 3, height: 3).position(self.leftEyeBoundingBox.origin)
                         Circle().fill(Color.green).frame(width: 3, height: 3).position(self.rightEyeBoundingBox.origin)
                         

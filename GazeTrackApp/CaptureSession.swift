@@ -5,6 +5,7 @@
 //  Created by Jason Shang on 3/2/23.
 //
 
+import UIKit
 import Foundation
 import AVFoundation
 
@@ -45,6 +46,25 @@ class CaptureSession: NSObject, ObservableObject {
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "SampleBuffer"))
         if (session.canAddOutput(videoOutput)) {
             session.addOutput(videoOutput)
+        }
+        
+        // set the connection's videoOrientation property of the AVCaptureVideoDataOutput to match the device orientation
+        if let connection = videoOutput.connection(with: .video) {
+            let deviceOrientation = UIDevice.current.orientation
+            let videoOrientation: AVCaptureVideoOrientation
+            switch deviceOrientation {
+            case .portrait:
+                videoOrientation = .portrait
+            case .portraitUpsideDown:
+                videoOrientation = .portraitUpsideDown
+            case .landscapeLeft:
+                videoOrientation = .landscapeRight
+            case .landscapeRight:
+                videoOrientation = .landscapeLeft
+            default:
+                videoOrientation = .portrait
+            }
+            connection.videoOrientation = videoOrientation
         }
         
         self.captureSession = session

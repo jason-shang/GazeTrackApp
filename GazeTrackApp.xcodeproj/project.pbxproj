@@ -26,8 +26,8 @@
 		966B950929AE978100B46864 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950829AE978100B46864 /* CameraView.swift */; };
 		966B950B29AE979200B46864 /* CaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950A29AE979200B46864 /* CaptureSession.swift */; };
 		966B950D29AE97A100B46864 /* FaceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950C29AE97A100B46864 /* FaceDetector.swift */; };
-		966B950F29AE97B200B46864 /* AVCaptureVideoOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */; };
 		966B951129B1891F00B46864 /* SessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966B951029B1891F00B46864 /* SessionData.swift */; };
+		96934B7229E99A1C0091132B /* Orientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96934B7129E99A1C0091132B /* Orientation.swift */; };
 		96D3998D29BAE27400C32EBC /* model.pt in Resources */ = {isa = PBXBuildFile; fileRef = 96D3998C29BAE27400C32EBC /* model.pt */; };
 		96D3999229BAE31900C32EBC /* TorchModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 96D3999129BAE31900C32EBC /* TorchModule.mm */; };
 		FDB7A93627C3BE2C58541E85 /* libPods-GazeTrackApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C9F988624F761248C159B35 /* libPods-GazeTrackApp.a */; };
@@ -70,8 +70,8 @@
 		966B950829AE978100B46864 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		966B950A29AE979200B46864 /* CaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSession.swift; sourceTree = "<group>"; };
 		966B950C29AE97A100B46864 /* FaceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceDetector.swift; sourceTree = "<group>"; };
-		966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVCaptureVideoOrientation.swift; sourceTree = "<group>"; };
 		966B951029B1891F00B46864 /* SessionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionData.swift; sourceTree = "<group>"; };
+		96934B7129E99A1C0091132B /* Orientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Orientation.swift; sourceTree = "<group>"; };
 		96D3998C29BAE27400C32EBC /* model.pt */ = {isa = PBXFileReference; lastKnownFileType = file; name = model.pt; path = GazeTrackApp/Model/model.pt; sourceTree = SOURCE_ROOT; };
 		96D3998F29BAE2D500C32EBC /* TorchModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TorchModule.h; sourceTree = "<group>"; };
 		96D3999029BAE31900C32EBC /* GazeTrackApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "GazeTrackApp-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -156,7 +156,7 @@
 				9622FCBD29CA6822004F927A /* DummyData */,
 				9622FCB029BB921B004F927A /* Model */,
 				96D3998E29BAE28D00C32EBC /* TorchBridge */,
-				966B950E29AE97B200B46864 /* AVCaptureVideoOrientation.swift */,
+				96934B7129E99A1C0091132B /* Orientation.swift */,
 				966B950C29AE97A100B46864 /* FaceDetector.swift */,
 				966B950A29AE979200B46864 /* CaptureSession.swift */,
 				966B950829AE978100B46864 /* CameraView.swift */,
@@ -299,7 +299,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				966349FD29D8B20B00A198EB /* JSONEncodableDataModel.swift in Sources */,
-				966B950F29AE97B200B46864 /* AVCaptureVideoOrientation.swift in Sources */,
 				966B950D29AE97A100B46864 /* FaceDetector.swift in Sources */,
 				9644C335299E9801007E9725 /* ContentView.swift in Sources */,
 				9644C333299E9801007E9725 /* GazeTrackApp.swift in Sources */,
@@ -307,6 +306,7 @@
 				966B950929AE978100B46864 /* CameraView.swift in Sources */,
 				96D3999229BAE31900C32EBC /* TorchModule.mm in Sources */,
 				9622FCBA29BB9D8B004F927A /* VideoInputConstants.swift in Sources */,
+				96934B7229E99A1C0091132B /* Orientation.swift in Sources */,
 				966B950B29AE979200B46864 /* CaptureSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

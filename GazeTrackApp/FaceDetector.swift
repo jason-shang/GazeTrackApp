@@ -35,8 +35,8 @@ class FaceDetector: NSObject, ObservableObject {
     @Published var roll: Float = 0
     @Published var pitch: Float = 0
     
-    private var imageWidth: Int = 0
-    private var imageHeight: Int = 0
+    private var bufferWidth: Int = 0
+    private var bufferHeight: Int = 0
     
     private var faceValid: Bool = false
     private var leftEyeValid: Bool = false
@@ -48,34 +48,6 @@ class FaceDetector: NSObject, ObservableObject {
     // here, subject receives new values of sampleBuffer from captureSession (see GazeTrackApp AppDelegate) and broadcasts that to downstream subscribers
     let subject = PassthroughSubject<CMSampleBuffer?, Never>()
     var cancellables = [AnyCancellable]()
-    
-    // MARK: data storage for current recording session
-    var faceHeights: [CGFloat] = []
-    var faceWidths: [CGFloat] = []
-    var faceXs: [CGFloat] = []
-    var faceYs: [CGFloat] = []
-    var faceValids: [Int] = []
-    
-    var lEyeHeights: [CGFloat] = []
-    var lEyeWidths: [CGFloat] = []
-    var lEyeXs: [CGFloat] = []
-    var lEyeYs: [CGFloat] = []
-    var lEyeValids: [Int] = []
-    
-    var rEyeHeights: [CGFloat] = []
-    var rEyeWidths: [CGFloat] = []
-    var rEyeXs: [CGFloat] = []
-    var rEyeYs: [CGFloat] = []
-    var rEyeValids: [Int] = []
-    
-    var frameNames: [String] = []
-    var framesCache: [UIImage] = []
-    let maxFramesCacheSize: Int = 30
-    var numFaceDetections: Int = 0
-    var numEyeDetections: Int = 0
-    var deviceName: String = "iPhone 13 Pro"
-    
-    var frameNum: Int = 0
     
     init(captureSession: CaptureSession) {
         self.captureSession = captureSession
@@ -92,8 +64,8 @@ class FaceDetector: NSObject, ObservableObject {
                     return
                 }
                 let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-                self.imageWidth = Int(dimensions.width)
-                self.imageHeight = Int(dimensions.height)
+                self.bufferWidth = Int(dimensions.width)
+                self.bufferHeight = Int(dimensions.height)
                 
                 try self.detect(sampleBuffer: sampleBuffer)
                 
@@ -106,6 +78,8 @@ class FaceDetector: NSObject, ObservableObject {
         }.store(in: &cancellables)
     }
     
+    /// Set up and perform face detection requests
+    /// - Parameter sampleBuffer: CMSampleBuffer object representing the current image frame
     func detect(sampleBuffer: CMSampleBuffer) throws {
         let handler = VNSequenceRequestHandler()
         
@@ -117,10 +91,12 @@ class FaceDetector: NSObject, ObservableObject {
         let faceRectanglesRequest = VNDetectFaceRectanglesRequest.init(completionHandler: handleRequests)
         faceRectanglesRequest.revision = VNDetectFaceRectanglesRequestRevision3
         
+        let deviceOrientation = UIDevice.current.orientation.cgImagePropertyOrientation
+        
         DispatchQueue.global().async {
             do {
                 // note: the completion handlers assigned to each of these requests will have access to the results of all these requests,
-                try handler.perform([faceLandmarksRequest, faceCaptureQualityRequest, faceRectanglesRequest], on: sampleBuffer, orientation: .left)
+                try handler.perform([faceLandmarksRequest, faceCaptureQualityRequest, faceRectanglesRequest], on: sampleBuffer, orientation: deviceOrientation)
             } catch {
                 // don't do anything
             }
@@ -149,13 +125,13 @@ class FaceDetector: NSObject, ObservableObject {
     }
     
     /// From VNFaceObservation result, extracts
-    /// 1. face bounding box in image coordinates
+    /// 1. face bounding box in image coordinates AND device coordinates
     /// 2. yaw, pitch, roll
-    /// 3. left and right eye bounding boxes in image coordinates
+    /// 3. left and right eye bounding boxes in image coordinates AND device coordinates
     /// 4. capture quality
     /// - Parameter result: VNFaceObservation result
     func processFaceObservationResult(result: VNFaceObservation) {
-        if self.imageWidth > 0 && self.imageHeight > 0 {
+        if self.bufferWidth > 0 && self.bufferHeight > 0 {
             self.faceValid = true
             self.leftEyeValid = true
             self.rightEyeValid = true
@@ -171,7 +147,7 @@ class FaceDetector: NSObject, ObservableObject {
         self.faceBoundingBoxDevice = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
         
         // get face bounding box relative to image coordinates
-        self.faceBoundingBoxImage = VNImageRectForNormalizedRect(result.boundingBox, self.imageWidth, self.imageHeight)
+        self.faceBoundingBoxImage = VNImageRectForNormalizedRect(result.boundingBox, self.bufferWidth, self.bufferHeight)
         
         if let yaw = result.yaw,
            let pitch = result.pitch,
@@ -195,8 +171,8 @@ class FaceDetector: NSObject, ObservableObject {
         self.rightEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
         
         // 2. image coordinates
-        self.leftEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.imageWidth, height: self.imageHeight)
-        self.rightEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.imageWidth, height: self.imageHeight)
+        self.leftEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
+        self.rightEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
         
         if let captureQuality = result.faceCaptureQuality {
             self.faceCaptureQuality = captureQuality
