@@ -155,27 +155,25 @@ class SessionData {
         let context = CIContext(options: nil)
         let cgImage = context.createCGImage(ciimage, from: ciimage.extent)!
         let image = UIImage(cgImage: cgImage)
-        return image
+        let flippedImage = image.withHorizontallyFlippedOrientation()
+        
+        return flippedImage
     }
     
-    func scaleImageToScreenSize(image: UIImage) {
-        let screenSize = UIScreen.main.bounds.size
-        let scale = UIScreen.main.scale
-        let outputSize = CGSize(width: screenSize.width * scale, height: screenSize.height * scale)
-        print("output size width: \(outputSize.width), height: \(outputSize.height)")
-        
-//        let widthScaleFactor = screenSize.width / image.size.width
-//        let heightScaleFactor = screenSize.height / image.size.height
-////        let scaleFactor = min(screenSize.width / image.size.width, screenSize.height / image.size.height)
-//        let newSize = CGSize(width: Int(image.size.width * widthScaleFactor), height: Int(image.size.height * heightScaleFactor))
+//    func scaleImageToScreenSize(image: UIImage) -> UIImage {
+//        let scale = UIScreen.main.scale
+//        let screenSize = UIScreen.main.bounds.size
+//        let newSize = CGSize(width: screenSize.width / scale, height: screenSize.height / scale)
+//        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
 //
-//        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
-//        image.draw(in: CGRect(origin: .zero, size: newSize))
-//        let scaledImage = UIGraphicsGetImageFromCurrentImageContext()
+//        UIGraphicsBeginImageContextWithOptions(newSize, false, scale)
+//        image.draw(in: rect)
+//
+//        let newImage = UIGraphicsGetImageFromCurrentImageContext()
 //        UIGraphicsEndImageContext()
 //
-//        return scaledImage!
-    }
+//        return newImage!
+//    }
 
     /// writes image frames stored in framesCache to disk, then clears the cache
     func saveFramesToDisk() {
@@ -188,6 +186,7 @@ class SessionData {
         for frame in self.framesCache {
             // scale image to device coordinates
 //            let scaledImage = self.scaleImageToScreenSize(image: frame)
+//            print("scaled image width: \(scaledImage.size.width), height: \(scaledImage.size.height)")
             
             if let imageData = frame.jpegData(compressionQuality: 0.5) { // could adjust compression quality (1.0 max, 0.0 min)
                 let fileName = "frame_\(self.frameNum).jpg"
