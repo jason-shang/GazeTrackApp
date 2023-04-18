@@ -134,8 +134,6 @@ class SessionData {
 
         // convert image to UIImage to save memory, then cache and flush when cache reaches max cache size
         guard let image = self.uiImageFromSampleBuffer(sampleBuffer: frame) else { return }
-        let size = image.size
-        print("UIImage width: \(size.width), height: \(size.height)")
         self.framesCache.append(image)
 
         if self.framesCache.count >= self.maxFramesCacheSize {
@@ -160,20 +158,32 @@ class SessionData {
         return flippedImage
     }
     
-//    func scaleImageToScreenSize(image: UIImage) -> UIImage {
-//        let scale = UIScreen.main.scale
-//        let screenSize = UIScreen.main.bounds.size
-//        let newSize = CGSize(width: screenSize.width / scale, height: screenSize.height / scale)
-//        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
-//
-//        UIGraphicsBeginImageContextWithOptions(newSize, false, scale)
-//        image.draw(in: rect)
-//
-//        let newImage = UIGraphicsGetImageFromCurrentImageContext()
-//        UIGraphicsEndImageContext()
-//
-//        return newImage!
-//    }
+    
+    /// Scale image to the desired aspect ratio (same as the screen)
+    /// - Parameter image: UIImage; frame to be scaled
+    /// - Returns: frame scaled to the desired aspect ratio (screen aspect ratio)
+    func scaleImageToScreenSize(image: UIImage) -> UIImage {
+        let targetSize = UIScreen.main.bounds.size
+        let imageAspectRatio = image.size.width / image.size.height
+
+        var cropRect = CGRect.zero
+        if imageAspectRatio > targetSize.width / targetSize.height {
+            let newWidth = image.size.height * targetSize.width / targetSize.height
+            cropRect = CGRect(x: (image.size.width - newWidth) / 2, y: 0, width: newWidth, height: image.size.height)
+        } else {
+            let newHeight = image.size.width * targetSize.height / targetSize.width
+            cropRect = CGRect(x: 0, y: (image.size.height - newHeight) / 2, width: image.size.width, height: newHeight)
+        }
+
+        guard let cgImage = image.cgImage?.cropping(to: cropRect) else {
+            print("could not crop")
+            return UIImage()
+        }
+
+        let croppedImage = UIImage(cgImage: cgImage)
+
+        return croppedImage
+    }
 
     /// writes image frames stored in framesCache to disk, then clears the cache
     func saveFramesToDisk() {
@@ -185,15 +195,14 @@ class SessionData {
         // use documentsDirectory for saving files
         for frame in self.framesCache {
             // scale image to device coordinates
-//            let scaledImage = self.scaleImageToScreenSize(image: frame)
-//            print("scaled image width: \(scaledImage.size.width), height: \(scaledImage.size.height)")
+            let scaledImage = scaleImageToScreenSize(image: frame)
             
-            if let imageData = frame.jpegData(compressionQuality: 0.5) { // could adjust compression quality (1.0 max, 0.0 min)
+            if let imageData = scaledImage.jpegData(compressionQuality: 0.8) { // could adjust compression quality (1.0 max, 0.0 min)
                 let fileName = "frame_\(self.frameNum).jpg"
                 let folderURL = documentDirectory.appendingPathComponent(self.sessionName, isDirectory: true)
                 let fileURL = folderURL.appendingPathComponent(fileName)
                 do {
-                    print("writing \(fileName) to disk")
+//                    print("writing \(fileName) to disk")
                     try imageData.write(to: fileURL)
                     self.frameNum += 1
 //                    print("\(self.frameNum) number of disk writes")

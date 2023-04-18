@@ -19,15 +19,15 @@ class FaceDetector: NSObject, ObservableObject {
     
     // relative to top left corner of full frame
     @Published var faceBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // device coordinates (for display)
-    @Published var faceBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // image coordinates (for session data)
+//    @Published var faceBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // image coordinates (for session data)
     
-    // relative to top-left corner of face bounding box
+    // relative to top-left corner of face bounding box (TODO: change it to actually do this! right now it's relative to top left corner of full frame)
     // 1. device coordinates
     @Published var leftEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     @Published var rightEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     // 2. image coordinates
-    @Published var leftEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
-    @Published var rightEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+//    @Published var leftEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+//    @Published var rightEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     
     @Published var landmarks: VNFaceLandmarks2D?
     
@@ -70,7 +70,7 @@ class FaceDetector: NSObject, ObservableObject {
                 try self.detect(sampleBuffer: sampleBuffer)
                 
                 // TODO: safe unwrap? 
-                captureSession.sessionData!.updateSessionData(faceBoundingBox: self.faceBoundingBoxImage, leftEyeBoundingBox: self.leftEyeBoundingBoxImage, rightEyeBoundingBox: self.rightEyeBoundingBoxImage, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
+                captureSession.sessionData!.updateSessionData(faceBoundingBox: self.faceBoundingBoxDevice, leftEyeBoundingBox: self.leftEyeBoundingBoxDevice, rightEyeBoundingBox: self.rightEyeBoundingBoxDevice, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
             } catch {
                 print("Error has been thrown")
             }
@@ -141,13 +141,12 @@ class FaceDetector: NSObject, ObservableObject {
         let bounds = UIScreen.main.bounds
         let deviceWidth = Int(bounds.size.width)
         let deviceHeight = Int(bounds.size.height)
-        print("device width: \(deviceWidth), height: \(deviceHeight)")
 
         // get face bounding box relative to device coordinates
         self.faceBoundingBoxDevice = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
         
         // get face bounding box relative to image coordinates
-        self.faceBoundingBoxImage = VNImageRectForNormalizedRect(result.boundingBox, self.bufferWidth, self.bufferHeight)
+//        self.faceBoundingBoxImage = VNImageRectForNormalizedRect(result.boundingBox, self.bufferWidth, self.bufferHeight)
         
         if let yaw = result.yaw,
            let pitch = result.pitch,
@@ -171,8 +170,8 @@ class FaceDetector: NSObject, ObservableObject {
         self.rightEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
         
         // 2. image coordinates
-        self.leftEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
-        self.rightEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
+//        self.leftEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
+//        self.rightEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
         
         if let captureQuality = result.faceCaptureQuality {
             self.faceCaptureQuality = captureQuality
