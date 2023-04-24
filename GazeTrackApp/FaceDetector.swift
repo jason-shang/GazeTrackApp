@@ -15,32 +15,32 @@ class FaceDetector: NSObject, ObservableObject {
     
     private var captureSession: CaptureSession
     
-    @Published var faceCaptureQuality: Float = 0.0
+//    @Published var faceCaptureQuality: Float = 0.0
     
     // relative to top left corner of full frame
-    @Published var faceBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // device coordinates (for display)
+//    @Published var faceBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // device coordinates (for display)
 //    @Published var faceBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0) // image coordinates (for session data)
     
     // relative to top-left corner of face bounding box (TODO: change it to actually do this! right now it's relative to top left corner of full frame)
     // 1. device coordinates
-    @Published var leftEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
-    @Published var rightEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+//    @Published var leftEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+//    @Published var rightEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     // 2. image coordinates
 //    @Published var leftEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
 //    @Published var rightEyeBoundingBoxImage = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
     
-    @Published var landmarks: VNFaceLandmarks2D?
-    
-    @Published var yaw: Float = 0
-    @Published var roll: Float = 0
-    @Published var pitch: Float = 0
-    
-    private var bufferWidth: Int = 0
-    private var bufferHeight: Int = 0
-    
-    private var faceValid: Bool = false
-    private var leftEyeValid: Bool = false
-    private var rightEyeValid: Bool = false
+//    @Published var landmarks: VNFaceLandmarks2D?
+//
+//    @Published var yaw: Float = 0
+//    @Published var roll: Float = 0
+//    @Published var pitch: Float = 0
+//
+//    private var bufferWidth: Int = 0
+//    private var bufferHeight: Int = 0
+//
+//    private var faceValid: Bool = false
+//    private var leftEyeValid: Bool = false
+//    private var rightEyeValid: Bool = false
     
     private var sampleBuffer: CMSampleBuffer?
     
@@ -58,19 +58,19 @@ class FaceDetector: NSObject, ObservableObject {
                 guard let sampleBuffer = sampleBuffer else {
                     return
                 }
-                
-                guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
-                    print("Error: cannot get dimensions from sample buffer.")
-                    return
-                }
-                let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-                self.bufferWidth = Int(dimensions.width)
-                self.bufferHeight = Int(dimensions.height)
+//                guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
+//                    print("Error: cannot get dimensions from sample buffer.")
+//                    return
+//                }
+//                let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+//                self.bufferWidth = Int(dimensions.width)
+//                self.bufferHeight = Int(dimensions.height)
                 
                 try self.detect(sampleBuffer: sampleBuffer)
                 
-                // TODO: safe unwrap? 
-                captureSession.sessionData!.updateSessionData(faceBoundingBox: self.faceBoundingBoxDevice, leftEyeBoundingBox: self.leftEyeBoundingBoxDevice, rightEyeBoundingBox: self.rightEyeBoundingBoxDevice, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
+//                if let sessionData = captureSession.sessionData {
+//                    sessionData.updateSessionData(faceBoundingBox: self.faceBoundingBoxDevice, leftEyeBoundingBox: self.leftEyeBoundingBoxDevice, rightEyeBoundingBox: self.rightEyeBoundingBoxDevice, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
+//                }
             } catch {
                 print("Error has been thrown")
             }
@@ -83,23 +83,89 @@ class FaceDetector: NSObject, ObservableObject {
     func detect(sampleBuffer: CMSampleBuffer) throws {
         let handler = VNSequenceRequestHandler()
         
-        let faceLandmarksRequest = VNDetectFaceLandmarksRequest.init(completionHandler: handleRequests)
+//        let faceLandmarksRequest = VNDetectFaceLandmarksRequest.init(completionHandler: handleRequests)
+//        faceLandmarksRequest.revision = VNDetectFaceLandmarksRequestRevision3
+//
+//        let faceCaptureQualityRequest = VNDetectFaceCaptureQualityRequest.init(completionHandler: handleRequests)
+//
+//        let faceRectanglesRequest = VNDetectFaceRectanglesRequest.init(completionHandler: handleRequests)
+//        faceRectanglesRequest.revision = VNDetectFaceRectanglesRequestRevision3
+        
+        let faceLandmarksRequest = VNDetectFaceLandmarksRequest()
         faceLandmarksRequest.revision = VNDetectFaceLandmarksRequestRevision3
-        
-        let faceCaptureQualityRequest = VNDetectFaceCaptureQualityRequest.init(completionHandler: handleRequests)
-        
-        let faceRectanglesRequest = VNDetectFaceRectanglesRequest.init(completionHandler: handleRequests)
+        let faceCaptureQualityRequest = VNDetectFaceCaptureQualityRequest()
+        let faceRectanglesRequest = VNDetectFaceRectanglesRequest()
         faceRectanglesRequest.revision = VNDetectFaceRectanglesRequestRevision3
+        
+        let requests = [faceLandmarksRequest, faceCaptureQualityRequest, faceRectanglesRequest]
         
         let deviceOrientation = UIDevice.current.orientation.cgImagePropertyOrientation
         
         DispatchQueue.global().async {
             do {
                 // note: the completion handlers assigned to each of these requests will have access to the results of all these requests,
-                try handler.perform([faceLandmarksRequest, faceCaptureQualityRequest, faceRectanglesRequest], on: sampleBuffer, orientation: deviceOrientation)
+//                try handler.perform([faceLandmarksRequest, faceCaptureQualityRequest, faceRectanglesRequest], on: sampleBuffer, orientation: deviceOrientation)
+                try handler.perform(requests, on: sampleBuffer, orientation: deviceOrientation)
+                
+                if let results = faceLandmarksRequest.results {
+                    self.processFaceObservationResult2(result: results[0], sampleBuffer: sampleBuffer)
+                }
             } catch {
                 // don't do anything
             }
+        }
+    }
+    
+    func processFaceObservationResult2(result: VNFaceObservation, sampleBuffer: CMSampleBuffer) {
+        guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
+            print("Error: cannot get dimensions from sample buffer.")
+            return
+        }
+        let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+        let bufferWidth = Int(dimensions.width)
+        let bufferHeight = Int(dimensions.height)
+        
+        var faceValid = false
+        var leftEyeValid = false
+        var rightEyeValid = false
+        if bufferWidth > 0 && bufferHeight > 0 {
+            faceValid = true
+            leftEyeValid = true
+            rightEyeValid = true
+        }
+        
+        // get device bounds
+        let bounds = UIScreen.main.bounds
+        let deviceWidth = Int(bounds.size.width)
+        let deviceHeight = Int(bounds.size.height)
+
+        // get face bounding box relative to device coordinates
+        let faceBoundingBoxDevice = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
+        
+        var leftEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+        var rightEyeBoundingBoxDevice = CGRect(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+        
+        if let landmarks = result.landmarks {
+            guard let leftEyebrow = landmarks.leftEyebrow else { return }
+            guard let rightEyebrow = landmarks.rightEyebrow else { return }
+            let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
+            let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
+            
+            // 1. device coordinates
+            leftEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
+            rightEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
+        }
+        
+        if let sessionData = self.captureSession.sessionData {
+            sessionData.updateSessionData(
+                faceBoundingBox: faceBoundingBoxDevice,
+                leftEyeBoundingBox: leftEyeBoundingBoxDevice,
+                rightEyeBoundingBox: rightEyeBoundingBoxDevice,
+                frame: sampleBuffer,
+                faceValid: faceValid,
+                leftEyeValid: leftEyeValid,
+                rightEyeValid: rightEyeValid
+            )
         }
     }
     
@@ -112,15 +178,15 @@ class FaceDetector: NSObject, ObservableObject {
             guard
             let results = request.results as? [VNFaceObservation],
             let result = results.first else { // encountered invalid face detection
-                self.faceValid = false
-                
-                // TODO: when should eye detections be invalid?
-                self.leftEyeValid = false
-                self.rightEyeValid = false
+//                self.faceValid = false
+//
+//                // TODO: when should eye detections be invalid?
+//                self.leftEyeValid = false
+//                self.rightEyeValid = false
                 return
             }
             
-            self.processFaceObservationResult(result: result)
+//            self.processFaceObservationResult(result: result)
         }
     }
     
@@ -130,53 +196,53 @@ class FaceDetector: NSObject, ObservableObject {
     /// 3. left and right eye bounding boxes in image coordinates AND device coordinates
     /// 4. capture quality
     /// - Parameter result: VNFaceObservation result
-    func processFaceObservationResult(result: VNFaceObservation) {
-        if self.bufferWidth > 0 && self.bufferHeight > 0 {
-            self.faceValid = true
-            self.leftEyeValid = true
-            self.rightEyeValid = true
-        }
-        
-        // get device bounds
-        let bounds = UIScreen.main.bounds
-        let deviceWidth = Int(bounds.size.width)
-        let deviceHeight = Int(bounds.size.height)
-
-        // get face bounding box relative to device coordinates
-        self.faceBoundingBoxDevice = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
-        
-        // get face bounding box relative to image coordinates
-//        self.faceBoundingBoxImage = VNImageRectForNormalizedRect(result.boundingBox, self.bufferWidth, self.bufferHeight)
-        
-        if let yaw = result.yaw,
-           let pitch = result.pitch,
-           let roll = result.roll {
-            self.yaw = yaw.floatValue
-            self.pitch = pitch.floatValue
-            self.roll = roll.floatValue
-        }
-        
-        if let landmarks = result.landmarks {
-            self.landmarks = landmarks
-        }
-        
-        guard let leftEyebrow = self.landmarks?.leftEyebrow else { return }
-        guard let rightEyebrow = self.landmarks?.rightEyebrow else { return }
-        let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
-        let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
-        
-        // 1. device coordinates
-        self.leftEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
-        self.rightEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
-        
-        // 2. image coordinates
-//        self.leftEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
-//        self.rightEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
-        
-        if let captureQuality = result.faceCaptureQuality {
-            self.faceCaptureQuality = captureQuality
-        }
-    }
+//    func processFaceObservationResult(result: VNFaceObservation) {
+//        if self.bufferWidth > 0 && self.bufferHeight > 0 {
+//            self.faceValid = true
+//            self.leftEyeValid = true
+//            self.rightEyeValid = true
+//        }
+//
+//        // get device bounds
+//        let bounds = UIScreen.main.bounds
+//        let deviceWidth = Int(bounds.size.width)
+//        let deviceHeight = Int(bounds.size.height)
+//
+//        // get face bounding box relative to device coordinates
+//        self.faceBoundingBoxDevice = VNImageRectForNormalizedRect(result.boundingBox, deviceWidth, deviceHeight)
+//
+//        // get face bounding box relative to image coordinates
+////        self.faceBoundingBoxImage = VNImageRectForNormalizedRect(result.boundingBox, self.bufferWidth, self.bufferHeight)
+//
+//        if let yaw = result.yaw,
+//           let pitch = result.pitch,
+//           let roll = result.roll {
+//            self.yaw = yaw.floatValue
+//            self.pitch = pitch.floatValue
+//            self.roll = roll.floatValue
+//        }
+//
+//        if let landmarks = result.landmarks {
+//            self.landmarks = landmarks
+//        }
+//
+//        guard let leftEyebrow = self.landmarks?.leftEyebrow else { return }
+//        guard let rightEyebrow = self.landmarks?.rightEyebrow else { return }
+//        let leftEyebrowPts = Array([leftEyebrow.normalizedPoints[3], leftEyebrow.normalizedPoints[5]])
+//        let rightEyebrowPts = Array([rightEyebrow.normalizedPoints[5], rightEyebrow.normalizedPoints[3]])
+//
+//        // 1. device coordinates
+//        self.leftEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
+//        self.rightEyeBoundingBoxDevice = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxDevice, width: deviceWidth, height: deviceHeight)
+//
+//        // 2. image coordinates
+////        self.leftEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: leftEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
+////        self.rightEyeBoundingBoxImage = makeEyeBoundingBox(eyebrowPts: rightEyebrowPts, normalizedFaceBoundingBox: result.boundingBox, faceBoundingBox: self.faceBoundingBoxImage, width: self.bufferWidth, height: self.bufferHeight)
+//
+//        if let captureQuality = result.faceCaptureQuality {
+//            self.faceCaptureQuality = captureQuality
+//        }
+//    }
     
     /// Make eye bounding box based on the eye landmark and heuristics (proportion relative to the face)
     /// - Parameters:
@@ -218,7 +284,7 @@ class FaceDetector: NSObject, ObservableObject {
         // determine height of eye bounding box based on eye/face ratio (heuristics)
         // TODO: refine this proportion (average of all ratios in GazeCapture dataset?)
         let heightProportion = 4.0
-        let widthProportion = 4.0
+        let widthProportion = 3.5
         let eyeBoundingBoxHeight = faceBoundingBox.height/heightProportion
         let eyeBoundingBoxWidth = faceBoundingBox.width/widthProportion
         

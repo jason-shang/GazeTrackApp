@@ -37,8 +37,14 @@ class SessionData {
     var numFaceDetections: Int
     var numEyeDetections: Int
     var deviceName: String
+    
+    var screenH: [Int]
+    var screenW: [Int]
+    var orientation: [Int]
 
     var frameNum: Int
+    
+    var curDotIndex: Int
 
     init() {
         self.faceHeights = [CGFloat]()
@@ -61,16 +67,22 @@ class SessionData {
 
         self.frameNames = [String]()
         self.framesCache = [UIImage]()
-        self.maxFramesCacheSize = 0
+        self.maxFramesCacheSize = 20
         self.numFaceDetections = 0
         self.numEyeDetections = 0
         self.deviceName = "iPhone 13 Pro"
+        
+        self.screenH = [Int]()
+        self.screenW = [Int]()
+        self.orientation = [Int]()
 
         self.frameNum = 0
         
+        self.curDotIndex = 0
+        
         // initialize session name and then create the directory in document directory (will store all files from this session)
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MMddyy-HH:mm"
+        dateFormatter.dateFormat = "MMddyy-HH:mm:ss"
         self.sessionName = dateFormatter.string(from: Date())
         createDirectory(directoryName: self.sessionName)
     }
@@ -99,12 +111,11 @@ class SessionData {
     ///   - faceBoundingBox: image coordinates face bounding box
     ///   - leftEyeBoundingBox: image coordinates left eye bounding box
     ///   - rightEyeBoundingBox: image coordinates right eye bounding box
-    ///   - faceCaptureQuality: faceCaptureQuality - [0.0, 1.0], float
     ///   - frame:
     ///   - faceValid:
     ///   - leftEyeValid:
     ///   - rightEyeValid:
-    func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, faceCaptureQuality: Float, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
+    func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
         self.faceHeights.append(faceBoundingBox.height)
         self.faceWidths.append(faceBoundingBox.width)
         self.faceXs.append(faceBoundingBox.origin.x)
@@ -130,7 +141,7 @@ class SessionData {
         self.lEyeValids.append(leftEyeValid ? 1 : 0)
         self.rEyeValids.append(rightEyeValid ? 1 : 0)
         if (leftEyeValid && rightEyeValid) { self.numEyeDetections += 1 }
-        self.frameNames.append("session\(1)_\(self.frameNum).jpg") //TODO: update session index
+        self.frameNames.append("\(self.sessionName)_\(self.frameNum).jpg")
 
         // convert image to UIImage to save memory, then cache and flush when cache reaches max cache size
         guard let image = self.uiImageFromSampleBuffer(sampleBuffer: frame) else { return }
@@ -138,6 +149,32 @@ class SessionData {
 
         if self.framesCache.count >= self.maxFramesCacheSize {
             self.saveFramesToDisk()
+        }
+        
+        let bounds = UIScreen.main.bounds
+        let deviceWidth = Int(bounds.size.width)
+        let deviceHeight = Int(bounds.size.height)
+        
+        self.screenH.append(deviceHeight)
+        self.screenW.append(deviceWidth)
+        
+        switch UIDevice.current.orientation {
+        case .unknown:
+            self.orientation.append(0)
+        case .portrait:
+            self.orientation.append(1)
+        case .portraitUpsideDown:
+            self.orientation.append(2)
+        case .landscapeLeft:
+            self.orientation.append(3)
+        case .landscapeRight:
+            self.orientation.append(4)
+        case .faceUp:
+            self.orientation.append(5)
+        case .faceDown:
+            self.orientation.append(6)
+        @unknown default:
+            self.orientation.append(0)
         }
     }
     
@@ -187,13 +224,15 @@ class SessionData {
 
     /// writes image frames stored in framesCache to disk, then clears the cache
     func saveFramesToDisk() {
+        let framesCacheCopy = self.framesCache
+        self.framesCache.removeAll()
         guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
             print("Error accessing the document directory")
             return
         }
         
         // use documentsDirectory for saving files
-        for frame in self.framesCache {
+        for frame in framesCacheCopy {
             // scale image to device coordinates
             let scaledImage = scaleImageToScreenSize(image: frame)
             
@@ -211,17 +250,16 @@ class SessionData {
                 }
             }
         }
-
-        self.framesCache.removeAll()
     }
     
     /// write various data stores to documentDirectory as json files
     func processAndSaveData() {
-        let faceData = FaceOrEyeData(heights: self.faceHeights, widths: self.faceWidths, xs: self.faceXs, ys: self.faceYs, valids: self.faceValids)
-        let lEyeData = FaceOrEyeData(heights: self.lEyeHeights, widths: self.lEyeWidths, xs: self.lEyeXs, ys: self.lEyeYs, valids: self.lEyeValids)
-        let rEyeData = FaceOrEyeData(heights: self.rEyeHeights, widths: self.rEyeWidths, xs: self.rEyeXs, ys: self.rEyeYs, valids: self.rEyeValids)
+        let faceData = FaceOrEyeData(H: self.faceHeights, W: self.faceWidths, X: self.faceXs, Y: self.faceYs, IsValid: self.faceValids)
+        let lEyeData = FaceOrEyeData(H: self.lEyeHeights, W: self.lEyeWidths, X: self.lEyeXs, Y: self.lEyeYs, IsValid: self.lEyeValids)
+        let rEyeData = FaceOrEyeData(H: self.rEyeHeights, W: self.rEyeWidths, X: self.rEyeXs, Y: self.rEyeYs, IsValid: self.rEyeValids)
         let framesData = FramesData(frameNames: self.frameNames)
-        let infoData = InfoData(totalFrames: self.frameNum, numFaceDetections: self.numFaceDetections, numEyeDetections: self.numEyeDetections, deviceNmae: self.deviceName)
+        let infoData = InfoData(TotalFrames: self.frameNum, NumFaceDetections: self.numFaceDetections, NumEyeDetections: self.numEyeDetections, DeviceName: self.deviceName)
+//        let screenData = ScreenData(H: <#T##[Float]#>, W: <#T##[Float]#>, Orientation: <#T##[Int]#>)
         
         // still missing:
         // dotInfo.json

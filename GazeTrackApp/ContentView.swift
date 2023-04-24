@@ -45,7 +45,8 @@ struct ContentView: View {
         // note: I forced the ZStack to take up the entire screen to make sure that the eye bounding boxes, which are converted to image coordinates using the UIScreen device dimensions (represents the size of the entire screen) in FaceDetector.swift, are properly drawn onto the current view canvas (if not taking up entire screen, the bounding boxes will be shifted down a bit)
         // MARK: check if the bounding boxes should be defined with regards to the entire UIScreen or the current view (in other words, are the image frames' sizes the same as the device screen size?) when we have access to data
         ZStack {
-            cameraView()
+//            cameraView()
+            DotCalibrationView().environmentObject(faceDetector)
 //            VStack {
 //                qualityView()
 //                Spacer()
@@ -55,19 +56,19 @@ struct ContentView: View {
 //                positionView()
 //            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .edgesIgnoringSafeArea(.all)
-        .onChange(of: faceDetector.landmarks) { landmarks in
-             // check VNFaceLandmarks2D for more documentation about landmarks - https://developer.apple.com/documentation/vision/vnfacelandmarks2d
-//            guard let leftEye = landmarks?.leftEye else { return }
-            
-            self.faceBoundingBox = faceDetector.faceBoundingBoxDevice
-            self.leftEyeBoundingBox = faceDetector.leftEyeBoundingBoxDevice
-            self.rightEyeBoundingBox = faceDetector.rightEyeBoundingBoxDevice
-            
-//            guard let allPoints = landmarks?.allPoints else { return }
-//            self.allPoints = allPoints.normalizedPoints
-        }
+//        .frame(maxWidth: .infinity, maxHeight: .infinity)
+//        .edgesIgnoringSafeArea(.all)
+//        .onChange(of: faceDetector.landmarks) { landmarks in
+//             // check VNFaceLandmarks2D for more documentation about landmarks - https://developer.apple.com/documentation/vision/vnfacelandmarks2d
+////            guard let leftEye = landmarks?.leftEye else { return }
+//
+//            self.faceBoundingBox = faceDetector.faceBoundingBoxDevice
+//            self.leftEyeBoundingBox = faceDetector.leftEyeBoundingBoxDevice
+//            self.rightEyeBoundingBox = faceDetector.rightEyeBoundingBoxDevice
+//
+////            guard let allPoints = landmarks?.allPoints else { return }
+////            self.allPoints = allPoints.normalizedPoints
+//        }
     }
     
     @ViewBuilder
@@ -115,29 +116,29 @@ struct ContentView: View {
         }
     }
     
-    @ViewBuilder
-    func qualityView() -> some View {
-        HStack {
-            Text(String(format: "Face Capture Quality: %.2f", faceDetector.faceCaptureQuality))
-            Spacer()
-        }.padding().background(Color.gray)
-    }
-    
-    @ViewBuilder
-    func positionView() -> some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())
-            ],
-            alignment: .leading,
-            spacing: 0,
-            pinnedViews: [],
-            content: {
-                Text(String(format: "Pitch: %.2f", faceDetector.pitch))
-                Text(String(format: "Roll: %.2f", faceDetector.roll))
-                Text(String(format: "Yaw: %.2f", faceDetector.yaw))
-            }).padding().background(Color.gray)
-    }
+//    @ViewBuilder
+//    func qualityView() -> some View {
+//        HStack {
+//            Text(String(format: "Face Capture Quality: %.2f", faceDetector.faceCaptureQuality))
+//            Spacer()
+//        }.padding().background(Color.gray)
+//    }
+//    
+//    @ViewBuilder
+//    func positionView() -> some View {
+//        LazyVGrid(
+//            columns: [
+//                GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())
+//            ],
+//            alignment: .leading,
+//            spacing: 0,
+//            pinnedViews: [],
+//            content: {
+//                Text(String(format: "Pitch: %.2f", faceDetector.pitch))
+//                Text(String(format: "Roll: %.2f", faceDetector.roll))
+//                Text(String(format: "Yaw: %.2f", faceDetector.yaw))
+//            }).padding().background(Color.gray)
+//    }
 }
 
 extension CGPoint: Hashable {

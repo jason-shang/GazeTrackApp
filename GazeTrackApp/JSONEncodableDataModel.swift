@@ -13,11 +13,11 @@ protocol JSONEncodableDataModel {
 
 /// gazecapture appleFace.json, appleLeftEye.json & appleRightEye.json
 struct FaceOrEyeData: Codable, JSONEncodableDataModel {
-    var heights: [CGFloat]
-    var widths: [CGFloat]
-    var xs: [CGFloat]
-    var ys: [CGFloat]
-    var valids: [Int]
+    var H: [CGFloat]
+    var W: [CGFloat]
+    var X: [CGFloat]
+    var Y: [CGFloat]
+    var IsValid: [Int]
     
     func toJSON() -> Data? {
         let encoder = JSONEncoder()
@@ -27,8 +27,9 @@ struct FaceOrEyeData: Codable, JSONEncodableDataModel {
 
 /// gazecapture dotInfo.json
 struct DotData: Codable, JSONEncodableDataModel {
-    var dotNums: [Int]
+    var DotNum: [Int]
     var XPts: [Float]
+    var YPts: [Float]
     var XCam: [Float]
     var YCam: [Float]
     var Time: [Float]
@@ -52,10 +53,21 @@ struct FramesData: Codable, JSONEncodableDataModel {
 /// gazecapture info.json
 /// note: missing type of dataset (train, test or val)
 struct InfoData: Codable, JSONEncodableDataModel {
-    var totalFrames: Int
-    var numFaceDetections: Int
-    var numEyeDetections: Int
-    var deviceNmae: String
+    var TotalFrames: Int
+    var NumFaceDetections: Int
+    var NumEyeDetections: Int
+    var DeviceName: String
+    
+    func toJSON() -> Data? {
+        let encoder = JSONEncoder()
+        return try? encoder.encode(self)
+    }
+}
+
+struct ScreenData: Codable, JSONEncodableDataModel {
+    var H: [Float]
+    var W: [Float]
+    var Orientation: [Int]
     
     func toJSON() -> Data? {
         let encoder = JSONEncoder()
