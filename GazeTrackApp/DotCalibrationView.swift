@@ -69,6 +69,9 @@ struct DotCalibrationView: View {
             let interval = Double(index) * 4
             DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
                 position = coordinate
+                faceDetector.curDotNum = index
+                faceDetector.curDotX = coordinate.x
+                faceDetector.curDotY = coordinate.y
                 dispatchGroup.leave()
             }
         }

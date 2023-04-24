@@ -4,17 +4,29 @@ PODS:
   - LibTorch/Core (1.13.0.1):
     - LibTorch/Torch
   - LibTorch/Torch (1.13.0.1)
+  - UIScreenExtension (0.0.10)
 
 DEPENDENCIES:
   - LibTorch (~> 1.13.0)
+  - UIScreenExtension (from `https://github.com/marchv/UIScreenExtension`)
 
 SPEC REPOS:
   trunk:
     - LibTorch
 
+EXTERNAL SOURCES:
+  UIScreenExtension:
+    :git: https://github.com/marchv/UIScreenExtension
+
+CHECKOUT OPTIONS:
+  UIScreenExtension:
+    :commit: 5d434af56d3ba0e15bb36b87d042e946d915ab9c
+    :git: https://github.com/marchv/UIScreenExtension
+
 SPEC CHECKSUMS:
   LibTorch: 8abfa5fc9d146230b31065a29b0502e1104956ea
+  UIScreenExtension: 2c6ab239077a11fd930f38b3fcf96307709dc2b0
 
-PODFILE CHECKSUM: 1f78d7e5a2f045405b5e4f2f388407e1a62bb3a7
+PODFILE CHECKSUM: ae90b0e485fdfc6f3f1cd2b0097cd170e97283f3
 
 COCOAPODS: 1.12.0

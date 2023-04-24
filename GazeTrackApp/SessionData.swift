@@ -8,6 +8,7 @@
 import Foundation
 import CoreMedia
 import UIKit
+import UIScreenExtension
 
 class SessionData {
     
@@ -44,7 +45,12 @@ class SessionData {
 
     var frameNum: Int
     
-    var curDotIndex: Int
+    var curDotNums: [Int]
+    var curDotXs: [Float]
+    var curDotYs: [Float]
+    var curDotXCams: [Float]
+    var curDotYCams: [Float]
+    var curDotTimes: [Float]
 
     init() {
         self.faceHeights = [CGFloat]()
@@ -78,7 +84,12 @@ class SessionData {
 
         self.frameNum = 0
         
-        self.curDotIndex = 0
+        self.curDotNums = [Int]()
+        self.curDotXs = [Float]()
+        self.curDotYs = [Float]()
+        self.curDotXCams = [Float]()
+        self.curDotYCams = [Float]()
+        self.curDotTimes = [Float]()
         
         // initialize session name and then create the directory in document directory (will store all files from this session)
         let dateFormatter = DateFormatter()
@@ -106,7 +117,7 @@ class SessionData {
         }
     }
 
-    /// Append face and eye bounding box data from the current sampleBuffer (frame) to the current session's data storage
+    /// Append face and eye bounding box data from the current sampleBuffer (frame), along with screen and calibration dot data to the current session's data storage
     /// - Parameters:
     ///   - faceBoundingBox: image coordinates face bounding box
     ///   - leftEyeBoundingBox: image coordinates left eye bounding box
@@ -115,7 +126,7 @@ class SessionData {
     ///   - faceValid:
     ///   - leftEyeValid:
     ///   - rightEyeValid:
-    func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool) {
+    func updateSessionData(faceBoundingBox: CGRect, leftEyeBoundingBox: CGRect, rightEyeBoundingBox: CGRect, frame: CMSampleBuffer, faceValid: Bool, leftEyeValid: Bool, rightEyeValid: Bool, curDotNum: Int, curDotX: CGFloat, curDotY: CGFloat) {
         self.faceHeights.append(faceBoundingBox.height)
         self.faceWidths.append(faceBoundingBox.width)
         self.faceXs.append(faceBoundingBox.origin.x)
@@ -176,6 +187,33 @@ class SessionData {
         @unknown default:
             self.orientation.append(0)
         }
+        
+        self.curDotNums.append(curDotNum)
+        self.curDotXs.append(Float(curDotX))
+        self.curDotYs.append(Float(curDotY))
+        
+        let camCoordsDot = convertToCameraCoordinates(original: CGPoint(x: curDotX, y: curDotY))
+        self.curDotXCams.append(Float(camCoordsDot.x))
+        self.curDotYCams.append(Float(camCoordsDot.y))
+        self.curDotTimes.append(0.0) // MARK: dummy value!
+    }
+    
+    /// Convert a calibration dot in device coordinates(unit - point, origin - top left corner) to one in camera coordinates (unit - cm, origin - camera)
+    /// - Parameter original: original CGPoint in device coordinates
+    /// - Returns: converted CGPoint in camera coordinates
+    func convertToCameraCoordinates(original: CGPoint) -> CGPoint {
+        guard let pointsPerCentimeter = UIScreen.pointsPerCentimeter else {
+            print("unable to get the points per centimeter for the current device")
+            return CGPoint(x: 0.0, y: 0.0)
+        }
+        
+        // convert from points to cm
+        let originalInCenterimeter = CGPoint(x: original.x / pointsPerCentimeter, y: original.y / pointsPerCentimeter)
+        
+        // apply translation: the original (2.6, 0.5) now maps to (0,0) for iPhone 13 Pro (device-specific measurements!)
+        // note: coordinate system is also flipped such that everything above and to the right of the camera is positive
+        // MARK: currently assuming portrait orientation - therefore flip the sign of the y component
+        return CGPoint(x: originalInCenterimeter.x - 2.6, y: -(originalInCenterimeter.y - 0.5))
     }
     
     /// Converts image from a sampleBuffer to a UIImage (less memory footprint and allows for direct conversion to jpeg format)
@@ -196,7 +234,7 @@ class SessionData {
     }
     
     
-    /// Scale image to the desired aspect ratio (same as the screen)
+    /// Crop image to the desired aspect ratio (same as the screen)
     /// - Parameter image: UIImage; frame to be scaled
     /// - Returns: frame scaled to the desired aspect ratio (screen aspect ratio)
     func scaleImageToScreenSize(image: UIImage) -> UIImage {
@@ -259,18 +297,19 @@ class SessionData {
         let rEyeData = FaceOrEyeData(H: self.rEyeHeights, W: self.rEyeWidths, X: self.rEyeXs, Y: self.rEyeYs, IsValid: self.rEyeValids)
         let framesData = FramesData(frameNames: self.frameNames)
         let infoData = InfoData(TotalFrames: self.frameNum, NumFaceDetections: self.numFaceDetections, NumEyeDetections: self.numEyeDetections, DeviceName: self.deviceName)
-//        let screenData = ScreenData(H: <#T##[Float]#>, W: <#T##[Float]#>, Orientation: <#T##[Int]#>)
+        let dotData = DotData(DotNum: self.curDotNums, XPts: self.curDotXs, YPts: self.curDotYs, XCam: self.curDotXCams, YCam: self.curDotYCams, Time: self.curDotTimes)
+        let screenData = ScreenData(H: self.screenH, W: self.screenW, Orientation: self.orientation)
         
         // still missing:
-        // dotInfo.json
         // faceGrid.json
-        // screen.json
         
         saveAsJSON(data: faceData, fileName: "appleFace")
         saveAsJSON(data: lEyeData, fileName: "appleLeftEye")
         saveAsJSON(data: rEyeData, fileName: "appleRightEye")
         saveAsJSON(data: framesData, fileName: "frames")
         saveAsJSON(data: infoData, fileName: "info")
+        saveAsJSON(data: dotData, fileName: "dotInfo")
+        saveAsJSON(data: screenData, fileName: "screen")
     }
 
     /// saves data to app's documents directory (local storage, no Cloud backup)
@@ -320,5 +359,12 @@ class SessionData {
         print("total number of frames: \(self.frameNum)")
         print("numFaceDetections: \(self.numFaceDetections)")
         print("numEyeDetections: \(self.numEyeDetections)")
+        
+        print("dotNums count: \(self.curDotNums.count)")
+        print("dotNums: \(self.curDotNums)")
+        print("dotXs count: \(self.curDotXs.count)")
+        print("dotYs count: \(self.curDotYs.count)")
+        print("dotXCams count: \(self.curDotXCams.count)")
+        print("dotYCams count: \(self.curDotYCams.count)")
     }
 }

@@ -13,7 +13,10 @@ import AVFoundation
 
 class FaceDetector: NSObject, ObservableObject {
     
-    private var captureSession: CaptureSession
+    var captureSession: CaptureSession
+    @Published var curDotNum: Int = 0
+    @Published var curDotX: CGFloat = 0.0
+    @Published var curDotY: CGFloat = 0.0
     
 //    @Published var faceCaptureQuality: Float = 0.0
     
@@ -54,6 +57,10 @@ class FaceDetector: NSObject, ObservableObject {
         super.init()
         subject.sink { sampleBuffer in
             self.sampleBuffer = sampleBuffer
+            let dotNum = self.curDotNum
+            let dotX = self.curDotX
+            let dotY = self.curDotY
+            
             do {
                 guard let sampleBuffer = sampleBuffer else {
                     return
@@ -66,7 +73,7 @@ class FaceDetector: NSObject, ObservableObject {
 //                self.bufferWidth = Int(dimensions.width)
 //                self.bufferHeight = Int(dimensions.height)
                 
-                try self.detect(sampleBuffer: sampleBuffer)
+                try self.detect(sampleBuffer: sampleBuffer, dotNum: dotNum, dotX: dotX, dotY: dotY)
                 
 //                if let sessionData = captureSession.sessionData {
 //                    sessionData.updateSessionData(faceBoundingBox: self.faceBoundingBoxDevice, leftEyeBoundingBox: self.leftEyeBoundingBoxDevice, rightEyeBoundingBox: self.rightEyeBoundingBoxDevice, faceCaptureQuality: self.faceCaptureQuality, frame: self.sampleBuffer!, faceValid: self.faceValid, leftEyeValid: self.leftEyeValid, rightEyeValid: self.rightEyeValid)
@@ -80,7 +87,7 @@ class FaceDetector: NSObject, ObservableObject {
     
     /// Set up and perform face detection requests
     /// - Parameter sampleBuffer: CMSampleBuffer object representing the current image frame
-    func detect(sampleBuffer: CMSampleBuffer) throws {
+    func detect(sampleBuffer: CMSampleBuffer, dotNum: Int, dotX: CGFloat, dotY: CGFloat) throws {
         let handler = VNSequenceRequestHandler()
         
 //        let faceLandmarksRequest = VNDetectFaceLandmarksRequest.init(completionHandler: handleRequests)
@@ -108,7 +115,7 @@ class FaceDetector: NSObject, ObservableObject {
                 try handler.perform(requests, on: sampleBuffer, orientation: deviceOrientation)
                 
                 if let results = faceLandmarksRequest.results {
-                    self.processFaceObservationResult2(result: results[0], sampleBuffer: sampleBuffer)
+                    self.processFaceObservationResult2(result: results[0], sampleBuffer: sampleBuffer, dotNum: dotNum, dotX: dotX, dotY: dotY)
                 }
             } catch {
                 // don't do anything
@@ -116,7 +123,7 @@ class FaceDetector: NSObject, ObservableObject {
         }
     }
     
-    func processFaceObservationResult2(result: VNFaceObservation, sampleBuffer: CMSampleBuffer) {
+    func processFaceObservationResult2(result: VNFaceObservation, sampleBuffer: CMSampleBuffer, dotNum: Int, dotX: CGFloat, dotY: CGFloat) {
         guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
             print("Error: cannot get dimensions from sample buffer.")
             return
@@ -164,7 +171,10 @@ class FaceDetector: NSObject, ObservableObject {
                 frame: sampleBuffer,
                 faceValid: faceValid,
                 leftEyeValid: leftEyeValid,
-                rightEyeValid: rightEyeValid
+                rightEyeValid: rightEyeValid,
+                curDotNum: dotNum,
+                curDotX: dotX,
+                curDotY: dotY
             )
         }
     }

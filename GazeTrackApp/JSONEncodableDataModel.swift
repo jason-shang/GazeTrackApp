@@ -65,8 +65,8 @@ struct InfoData: Codable, JSONEncodableDataModel {
 }
 
 struct ScreenData: Codable, JSONEncodableDataModel {
-    var H: [Float]
-    var W: [Float]
+    var H: [Int]
+    var W: [Int]
     var Orientation: [Int]
     
     func toJSON() -> Data? {
