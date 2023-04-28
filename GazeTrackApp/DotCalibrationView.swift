@@ -60,13 +60,16 @@ struct DotCalibrationView: View {
         let dispatchGroup = DispatchGroup()
         
         let coordinates: [CGPoint] = [
-            CGPoint(x: deviceWidth/3, y: deviceHeight/3),
-            CGPoint(x: 2*deviceWidth/3, y: 2*deviceHeight/3)
+            CGPoint(x: deviceWidth/4, y: 4*deviceHeight/9),
+            CGPoint(x: 3*deviceWidth/4, y: 3*deviceHeight/5),
+            CGPoint(x: 6*deviceWidth/7, y: deviceHeight/2),
+            CGPoint(x: 3*deviceWidth/8, y: 2*deviceHeight/7),
+            CGPoint(x: deviceWidth/3, y: deviceHeight/2)
         ]
         
         for (index, coordinate) in coordinates.enumerated() {
             dispatchGroup.enter()
-            let interval = Double(index) * 4
+            let interval = Double(index) * 3
             DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
                 position = coordinate
                 faceDetector.curDotNum = index

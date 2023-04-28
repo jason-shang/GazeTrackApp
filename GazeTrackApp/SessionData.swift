@@ -95,7 +95,7 @@ class SessionData {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMddyy-HH:mm:ss"
         self.sessionName = dateFormatter.string(from: Date())
-        createDirectory(directoryName: self.sessionName)
+        createDirectory(directoryName: self.sessionName + "/frames")
     }
     
     /// Create directory to which all data (frames & other json files) from the current session will be written
@@ -275,8 +275,8 @@ class SessionData {
             let scaledImage = scaleImageToScreenSize(image: frame)
             
             if let imageData = scaledImage.jpegData(compressionQuality: 0.8) { // could adjust compression quality (1.0 max, 0.0 min)
-                let fileName = "frame_\(self.frameNum).jpg"
-                let folderURL = documentDirectory.appendingPathComponent(self.sessionName, isDirectory: true)
+                let fileName = String(format: "%05d", self.frameNum) + ".jpg"
+                let folderURL = documentDirectory.appendingPathComponent(self.sessionName+"/frames", isDirectory: true)
                 let fileURL = folderURL.appendingPathComponent(fileName)
                 do {
 //                    print("writing \(fileName) to disk")

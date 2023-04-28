@@ -298,6 +298,9 @@ class FaceDetector: NSObject, ObservableObject {
         let eyeBoundingBoxHeight = faceBoundingBox.height/heightProportion
         let eyeBoundingBoxWidth = faceBoundingBox.width/widthProportion
         
-        return CGRect(x: vnImagePointLeft.x, y: vnImagePointLeft.y, width: eyeBoundingBoxWidth, height: eyeBoundingBoxHeight)
+        return CGRect(x: vnImagePointLeft.x - faceBoundingBox.origin.x,
+                      y: vnImagePointLeft.y - faceBoundingBox.origin.y,
+                      width: eyeBoundingBoxWidth,
+                      height: eyeBoundingBoxHeight)
     }
 }
