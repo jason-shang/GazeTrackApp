@@ -1,10 +1,11 @@
 //
 //  CaptureSession.swift
-//  BiometricPhoto
+//  GazeTrackApp
 //
-//  Created by Tobias Wissmüller on 12.01.22.
+//  Created by Jason Shang on 3/2/23.
 //
 
+import UIKit
 import Foundation
 import AVFoundation
 
@@ -12,6 +13,7 @@ class CaptureSession: NSObject, ObservableObject {
     @Published var sampleBuffer: CMSampleBuffer?
     
     var captureSession: AVCaptureSession?
+    var sessionData: SessionData?
     
     func setup() {
         var allowedAccess = false
@@ -46,6 +48,25 @@ class CaptureSession: NSObject, ObservableObject {
             session.addOutput(videoOutput)
         }
         
+        // set the connection's videoOrientation property of the AVCaptureVideoDataOutput to match the device orientation
+        if let connection = videoOutput.connection(with: .video) {
+            let deviceOrientation = UIDevice.current.orientation
+            let videoOrientation: AVCaptureVideoOrientation
+            switch deviceOrientation {
+            case .portrait:
+                videoOrientation = .portrait
+            case .portraitUpsideDown:
+                videoOrientation = .portraitUpsideDown
+            case .landscapeLeft:
+                videoOrientation = .landscapeRight
+            case .landscapeRight:
+                videoOrientation = .landscapeLeft
+            default:
+                videoOrientation = .portrait
+            }
+            connection.videoOrientation = videoOrientation
+        }
+        
         self.captureSession = session
     }
     
@@ -57,6 +78,7 @@ class CaptureSession: NSObject, ObservableObject {
         if (!captureSession.isRunning) {
             DispatchQueue.global(qos: .background).async {
                 captureSession.startRunning()
+                self.sessionData = SessionData()
             }
         }
     }
@@ -68,6 +90,17 @@ class CaptureSession: NSObject, ObservableObject {
         if (captureSession.isRunning) {
             captureSession.stopRunning()
         }
+        
+        // write remaining frames on the frames cache to disk
+        if self.sessionData!.framesCache.count > 0 {
+            self.sessionData!.saveFramesToDisk()
+        }
+        
+        // for debugging purposes
+        self.sessionData!.checkData()
+        
+        // write all collected info to disk as JSON files
+        self.sessionData!.processAndSaveData()
     }
 }
 
@@ -78,6 +111,3 @@ extension CaptureSession: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
     }
 }
-
-
-

@@ -7,4 +7,5 @@ target 'GazeTrackApp' do
 
   # Pods for GazeTrackApp
   pod 'LibTorch', '~> 1.13.0'
+  pod 'UIScreenExtension', :git => 'https://github.com/marchv/UIScreenExtension'
 end

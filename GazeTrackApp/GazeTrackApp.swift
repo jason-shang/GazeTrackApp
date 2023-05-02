@@ -11,9 +11,14 @@ import Combine
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     let captureSession = CaptureSession()
-    let faceDetector = FaceDetector()
+    let faceDetector: FaceDetector
     
     var cancellables = [AnyCancellable]()
+    
+    override init() {
+        self.faceDetector = FaceDetector(captureSession: self.captureSession)
+        super.init()
+    }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         captureSession.$sampleBuffer
@@ -27,19 +32,22 @@ struct GazeTrackApp: App {
     
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    @State var recording: Bool = false
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(recording: $recording)
                 .environmentObject(appDelegate.faceDetector)
                 .environmentObject(appDelegate.captureSession)
         }.onChange(of: scenePhase) { (newScenePhase) in
             switch newScenePhase {
             case .active:
-                appDelegate.captureSession.setup()
-                appDelegate.captureSession.start()
+                print("active")
+//                appDelegate.captureSession.setup()
+//                appDelegate.captureSession.start()
             case .background:
-                appDelegate.captureSession.stop()
+                print("background")
+//                appDelegate.captureSession.stop()
             case .inactive:
                 print("inactive")
             @unknown default:
